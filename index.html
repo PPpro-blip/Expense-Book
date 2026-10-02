@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Expense Tracker Pro — a simple, private way to track every expense.">
+  <title>Expense Tracker Pro</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#172033',
+            brand: {
+              50: '#effcf9',
+              100: '#d5f7ee',
+              500: '#0f9f85',
+              600: '#0b7f6b',
+              700: '#086755'
+            }
+          },
+          boxShadow: {
+            app: '0 24px 70px rgba(23, 32, 51, 0.14)',
+            float: '0 14px 30px rgba(15, 159, 133, 0.25)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://unpkg.com">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root { color-scheme: light; }
+    * { -webkit-tap-highlight-color: transparent; }
+    html { background: #eef3f5; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: #172033;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(72, 204, 171, .18), transparent 27rem),
+        radial-gradient(circle at 100% 15%, rgba(253, 196, 96, .14), transparent 24rem),
+        #eef3f5;
+    }
+    button, input, select { font: inherit; }
+    button { -webkit-user-select: none; user-select: none; }
+    .app-shell { min-height: 100vh; }
+    .app-frame { min-height: 100vh; }
+    .mesh-dot { background-image: radial-gradient(rgba(15, 159, 133, .13) 1px, transparent 1px); background-size: 16px 16px; }
+    .category-icon { transition: transform .18s ease; }
+    .expense-row:hover .category-icon { transform: scale(1.08) rotate(-3deg); }
+    .modal-enter { animation: modal-in .2s ease-out; }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toast-in { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .toast-in { animation: toast-in .24s ease-out; }
+    .hide-scrollbar { scrollbar-width: none; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+    @media (min-width: 768px) {
+      .app-shell { padding: 32px; }
+      .app-frame { min-height: calc(100vh - 64px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell mx-auto max-w-7xl">
+    <section class="app-frame relative overflow-hidden bg-[#f9fbfc] md:rounded-[2rem] md:border md:border-white md:shadow-app">
+      <div class="pointer-events-none absolute inset-0 mesh-dot opacity-30"></div>
+
+      <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-40 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-9">
+        <header class="flex items-start justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white shadow-float sm:h-14 sm:w-14">
+              <i data-lucide="wallet-cards" class="h-6 w-6 sm:h-7 sm:w-7" aria-hidden="true"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="mb-0.5 text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Personal finance</p>
+              <h1 class="truncate text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Expense Tracker Pro</h1>
+            </div>
+          </div>
+          <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm sm:flex">
+            <i data-lucide="calendar-days" class="h-4 w-4 text-brand-600" aria-hidden="true"></i>
+            <span id="todayBadge">Today</span>
+          </div>
+        </header>
+
+        <section aria-label="Expense overview" class="mt-5 grid grid-cols-2 gap-3 lg:mt-7 lg:grid-cols-4">
+          <article class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-brand-600 to-brand-500 p-4 text-white shadow-lg shadow-brand-600/15 sm:p-5">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-white/75">Grand total</p>
+              <i data-lucide="indian-rupee" class="h-4 w-4 text-white/80" aria-hidden="true"></i>
+            </div>
+            <p id="heroTotal" class="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">₹0.00</p>
+            <p class="mt-1 text-xs text-white/75">All recorded expenses</p>
+          </article>
+          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Entries</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 text-sky-600"><i data-lucide="receipt-text" class="h-4 w-4" aria-hidden="true"></i></span>
+            </div>
+            <p id="entryCount" class="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">0</p>
+            <p class="mt-1 text-xs text-slate-500">Expenses logged</p>
+          </article>
+          <article class="hidden rounded-2xl border border-white bg-white/90 p-5 shadow-sm lg:block">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">This month</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-amber-50 text-amber-600"><i data-lucide="calendar-range" class="h-4 w-4" aria-hidden="true"></i></span>
+            </div>
+            <p id="monthTotal" class="mt-2 text-3xl font-extrabold tracking-tight text-ink">₹0.00</p>
+            <p id="monthCaption" class="mt-1 text-xs text-slate-500">No activity yet</p>
+          </article>
+          <article class="hidden rounded-2xl border border-white bg-white/90 p-5 shadow-sm lg:block">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Top category</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-violet-50 text-violet-600"><i data-lucide="chart-no-axes-combined" class="h-4 w-4" aria-hidden="true"></i></span>
+            </div>
+            <p id="topCategory" class="mt-2 truncate text-xl font-extrabold tracking-tight text-ink">—</p>
+            <p id="topCategoryCaption" class="mt-1 text-xs text-slate-500">Add an expense to begin</p>
+          </article>
+        </section>
+
+        <section class="mt-5 rounded-2xl border border-slate-200/80 bg-white/85 p-3 shadow-sm backdrop-blur-sm sm:mt-6 sm:p-4" aria-label="Expense actions">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="grid grid-cols-2 gap-2 sm:flex">
+              <button id="addExpenseButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
+                <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
+                Add Expense
+              </button>
+              <button id="exportButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
+                <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
+                Export CSV
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <label for="categoryFilter" class="sr-only">Filter expenses by category</label>
+              <span class="hidden text-xs font-bold uppercase tracking-wider text-slate-500 sm:inline">Filter by category</span>
+              <div class="relative flex-1 sm:w-56 sm:flex-none">
+                <i data-lucide="list-filter" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-600" aria-hidden="true"></i>
+                <select id="categoryFilter" class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+                  <option value="All">All categories</option>
+                  <option value="Travel">🚗 Travel</option>
+                  <option value="Fuel">⛽ Fuel</option>
+                  <option value="Food">🍕 Food</option>
+                  <option value="Hotel">🏨 Hotel</option>
+                  <option value="Company Related">💼 Company Related</option>
+                </select>
+                <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+          <div id="activeFilterLine" class="mt-3 hidden items-center gap-2 border-t border-slate-100 pt-3 text-xs font-semibold text-brand-700">
+            <i data-lucide="funnel" class="h-3.5 w-3.5" aria-hidden="true"></i>
+            <span id="activeFilterText"></span>
+            <button id="clearFilterButton" type="button" class="ml-auto underline decoration-brand-300 underline-offset-2 transition hover:text-brand-900">Clear filter</button>
+          </div>
+        </section>
+
+        <section class="mt-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm sm:mt-6" aria-labelledby="expenseListTitle">
+          <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+            <div>
+              <h2 id="expenseListTitle" class="text-base font-extrabold text-ink">Expense history</h2>
+              <p id="listSubtitle" class="mt-0.5 text-xs text-slate-500">Your expenses will appear here.</p>
+            </div>
+            <button id="clearAllButton" type="button" class="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Clear all expenses">
+              <i data-lucide="trash-2" class="h-3.5 w-3.5" aria-hidden="true"></i>
+              Clear all
+            </button>
+          </div>
+
+          <div id="emptyState" class="px-5 py-14 text-center sm:py-16">
+            <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-brand-50 text-brand-600">
+              <i data-lucide="receipt" class="h-8 w-8" aria-hidden="true"></i>
+            </div>
+            <h3 id="emptyTitle" class="mt-4 text-lg font-extrabold text-ink">No expenses yet</h3>
+            <p id="emptyDescription" class="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">Keep a clear record of your spending. Add your first expense to get started.</p>
+            <button id="emptyAddButton" type="button" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">
+              <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
+              Add first expense
+            </button>
+          </div>
+
+          <div id="tableContainer" class="hidden">
+            <div class="hidden grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-slate-50 px-5 py-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 md:grid">
+              <span>Date</span>
+              <span>Expenses (Category)</span>
+              <span class="text-right">Price</span>
+              <span class="text-right">Sum</span>
+              <span class="sr-only">Actions</span>
+            </div>
+            <div id="expenseRows" class="divide-y divide-slate-100"></div>
+          </div>
+        </section>
+      </div>
+
+      <footer id="totalBar" class="fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-white/95 px-4 py-3 shadow-[0_-8px_26px_rgba(23,32,51,.09)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
+        <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <i data-lucide="sigma" class="h-5 w-5" aria-hidden="true"></i>
+            </div>
+            <div class="min-w-0">
+              <p id="summaryLabel" class="truncate text-xs font-semibold text-slate-500">Grand total · 0 entries</p>
+              <p id="summaryTotal" class="text-lg font-extrabold tracking-tight text-ink">₹0.00</p>
+            </div>
+          </div>
+          <div id="filterSummary" class="hidden shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-right">
+            <p class="text-[10px] font-bold uppercase tracking-wide text-brand-600">Filtered total</p>
+            <p id="filterTotal" class="text-sm font-extrabold text-brand-700">₹0.00</p>
+          </div>
+          <button id="bottomAddButton" type="button" class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-600 px-3.5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98] sm:px-4">
+            <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Add expense</span>
+            <span class="sm:hidden">Add</span>
+          </button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <div id="expenseModal" class="fixed inset-0 z-40 hidden items-end bg-slate-950/40 p-0 backdrop-blur-[2px] sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-enter w-full max-w-lg rounded-t-[2rem] bg-white shadow-2xl sm:rounded-[2rem]">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[.15em] text-brand-600">New record</p>
+          <h2 id="modalTitle" class="mt-0.5 text-xl font-extrabold text-ink">Add an expense</h2>
+        </div>
+        <button id="closeModalButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close add expense form">
+          <i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i>
+        </button>
+      </div>
+      <form id="expenseForm" class="px-5 py-5 sm:px-6 sm:py-6">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-bold text-slate-700">Date <span class="text-rose-500">*</span></span>
+            <input id="expenseDate" name="date" type="date" required class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+          </label>
+          <label class="block">
+            <span class="mb-2 block text-sm font-bold text-slate-700">Category <span class="text-rose-500">*</span></span>
+            <select id="expenseCategory" name="category" required class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+              <option value="Travel">🚗 Travel</option>
+              <option value="Fuel">⛽ Fuel</option>
+              <option value="Food">🍕 Food</option>
+              <option value="Hotel">🏨 Hotel</option>
+              <option value="Company Related">💼 Company Related</option>
+            </select>
+          </label>
+        </div>
+        <label class="mt-4 block">
+          <span class="mb-2 block text-sm font-bold text-slate-700">Description / title <span class="font-medium text-slate-400">(optional)</span></span>
+          <input id="expenseTitle" name="title" type="text" maxlength="80" placeholder="e.g. Airport taxi, team lunch" autocomplete="off" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 placeholder:font-medium placeholder:text-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+        </label>
+        <div class="mt-4">
+          <label for="expenseAmount" class="mb-2 block text-sm font-bold text-slate-700">Amount <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-brand-600">₹</span>
+            <input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" required placeholder="0.00" class="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-8 pr-3.5 text-base font-extrabold text-slate-800 placeholder:font-semibold placeholder:text-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+          </div>
+        </div>
+        <p class="mt-3 text-xs leading-5 text-slate-500">Your expense data is stored privately in this browser.</p>
+        <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button id="cancelModalButton" type="button" class="rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100">Cancel</button>
+          <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
+            <i data-lucide="circle-check" class="h-4 w-4" aria-hidden="true"></i>
+            Save expense
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 p-5 backdrop-blur-[2px]" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-2xl">
+      <div class="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600"><i data-lucide="triangle-alert" class="h-6 w-6" aria-hidden="true"></i></div>
+      <h2 id="confirmTitle" class="mt-4 text-lg font-extrabold text-ink">Remove expense?</h2>
+      <p id="confirmDescription" class="mt-2 text-sm leading-6 text-slate-500">This action cannot be undone.</p>
+      <div class="mt-6 flex gap-2">
+        <button id="confirmCancelButton" type="button" class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">Keep it</button>
+        <button id="confirmActionButton" type="button" class="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastRegion" class="pointer-events-none fixed bottom-24 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'expense-tracker-pro-expenses-v1';
+      const CATEGORIES = {
+        'Travel': { emoji: '🚗', color: 'bg-sky-50 text-sky-700 ring-sky-100' },
+        'Fuel': { emoji: '⛽', color: 'bg-amber-50 text-amber-700 ring-amber-100' },
+        'Food': { emoji: '🍕', color: 'bg-orange-50 text-orange-700 ring-orange-100' },
+        'Hotel': { emoji: '🏨', color: 'bg-violet-50 text-violet-700 ring-violet-100' },
+        'Company Related': { emoji: '💼', color: 'bg-emerald-50 text-emerald-700 ring-emerald-100' }
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const elements = {
+        todayBadge: $('#todayBadge'),
+        heroTotal: $('#heroTotal'),
+        entryCount: $('#entryCount'),
+        monthTotal: $('#monthTotal'),
+        monthCaption: $('#monthCaption'),
+        topCategory: $('#topCategory'),
+        topCategoryCaption: $('#topCategoryCaption'),
+        categoryFilter: $('#categoryFilter'),
+        activeFilterLine: $('#activeFilterLine'),
+        activeFilterText: $('#activeFilterText'),
+        clearFilterButton: $('#clearFilterButton'),
+        listSubtitle: $('#listSubtitle'),
+        clearAllButton: $('#clearAllButton'),
+        emptyState: $('#emptyState'),
+        emptyTitle: $('#emptyTitle'),
+        emptyDescription: $('#emptyDescription'),
+        tableContainer: $('#tableContainer'),
+        expenseRows: $('#expenseRows'),
+        summaryLabel: $('#summaryLabel'),
+        summaryTotal: $('#summaryTotal'),
+        filterSummary: $('#filterSummary'),
+        filterTotal: $('#filterTotal'),
+        expenseModal: $('#expenseModal'),
+        expenseForm: $('#expenseForm'),
+        expenseDate: $('#expenseDate'),
+        expenseCategory: $('#expenseCategory'),
+        expenseTitle: $('#expenseTitle'),
+        expenseAmount: $('#expenseAmount'),
+        confirmModal: $('#confirmModal'),
+        confirmTitle: $('#confirmTitle'),
+        confirmDescription: $('#confirmDescription'),
+        confirmActionButton: $('#confirmActionButton'),
+        toastRegion: $('#toastRegion')
+      };
+
+      let expenses = loadExpenses();
+      let activeFilter = 'All';
+      let pendingConfirmation = null;
+      let lastFocusedElement = null;
+
+      function localDateISO(date = new Date()) {
+        const tzOffset = date.getTimezoneOffset() * 60000;
+        return new Date(date.getTime() - tzOffset).toISOString().slice(0, 10);
+      }
+
+      function loadExpenses() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          if (!Array.isArray(parsed)) return [];
+          return parsed
+            .filter((item) => item && typeof item.date === 'string' && CATEGORIES[item.category] && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0)
+            .map((item) => ({
+              id: String(item.id || `${item.date}-${Math.random().toString(36).slice(2)}`),
+              date: item.date,
+              category: item.category,
+              title: typeof item.title === 'string' ? item.title.slice(0, 80) : '',
+              amount: Number(item.amount),
+              createdAt: Number(item.createdAt) || Date.now()
+            }));
+        } catch (error) {
+          console.warn('Could not read saved expenses.', error);
+          return [];
+        }
+      }
+
+      function saveExpenses() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        } catch (error) {
+          showToast('Unable to save changes in this browser.', 'error');
+          console.warn('Could not save expenses.', error);
+        }
+      }
+
+      function money(value) {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(Number(value) || 0);
+      }
+
+      function formatLongDate(dateString) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+      }
+
+      function escapeHTML(value) {
+        return String(value).replace(/[&<>'"]/g, (character) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[character]);
+      }
+
+      function sortedExpenses(list) {
+        return [...list].sort((a, b) => {
+          const dateOrder = a.date.localeCompare(b.date);
+          return dateOrder !== 0 ? dateOrder : a.createdAt - b.createdAt;
+        });
+      }
+
+      function getFilteredExpenses() {
+        return activeFilter === 'All' ? sortedExpenses(expenses) : sortedExpenses(expenses.filter((expense) => expense.category === activeFilter));
+      }
+
+      function totalOf(list) {
+        return list.reduce((total, expense) => total + expense.amount, 0);
+      }
+
+      function refreshIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function render() {
+        const visibleExpenses = getFilteredExpenses();
+        const grandTotal = totalOf(expenses);
+        const visibleTotal = totalOf(visibleExpenses);
+        const now = new Date();
+        const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const currentMonthExpenses = expenses.filter((expense) => expense.date.startsWith(currentMonthPrefix));
+        const categoryTotals = Object.keys(CATEGORIES).map((category) => ({
+          category,
+          total: totalOf(expenses.filter((expense) => expense.category === category))
+        })).filter((item) => item.total > 0).sort((a, b) => b.total - a.total);
+
+        elements.heroTotal.textContent = money(grandTotal);
+        elements.entryCount.textContent = expenses.length.toLocaleString('en-IN');
+        elements.monthTotal.textContent = money(totalOf(currentMonthExpenses));
+        elements.monthCaption.textContent = currentMonthExpenses.length ? `${currentMonthExpenses.length} ${currentMonthExpenses.length === 1 ? 'expense' : 'expenses'} this month` : 'No activity this month';
+        elements.topCategory.textContent = categoryTotals.length ? `${CATEGORIES[categoryTotals[0].category].emoji} ${categoryTotals[0].category}` : '—';
+        elements.topCategoryCaption.textContent = categoryTotals.length ? `${money(categoryTotals[0].total)} spent in this category` : 'Add an expense to begin';
+
+        const isFiltered = activeFilter !== 'All';
+        elements.activeFilterLine.classList.toggle('hidden', !isFiltered);
+        elements.activeFilterLine.classList.toggle('flex', isFiltered);
+        elements.activeFilterText.textContent = `Showing ${activeFilter} expenses`;
+        elements.filterSummary.classList.toggle('hidden', !isFiltered);
+        elements.filterTotal.textContent = money(visibleTotal);
+        elements.summaryLabel.textContent = isFiltered
+          ? `Grand total · ${expenses.length} ${expenses.length === 1 ? 'entry' : 'entries'}`
+          : `Grand total · ${expenses.length} ${expenses.length === 1 ? 'entry' : 'entries'}`;
+        elements.summaryTotal.textContent = money(grandTotal);
+        elements.listSubtitle.textContent = isFiltered
+          ? `${visibleExpenses.length} ${activeFilter} ${visibleExpenses.length === 1 ? 'expense' : 'expenses'} shown`
+          : `${expenses.length} ${expenses.length === 1 ? 'expense' : 'expenses'} recorded`;
+        elements.clearAllButton.classList.toggle('hidden', expenses.length === 0);
+        elements.clearAllButton.classList.toggle('inline-flex', expenses.length > 0);
+
+        const noVisibleExpenses = visibleExpenses.length === 0;
+        elements.emptyState.classList.toggle('hidden', !noVisibleExpenses);
+        elements.tableContainer.classList.toggle('hidden', noVisibleExpenses);
+        if (noVisibleExpenses) {
+          elements.emptyTitle.textContent = isFiltered ? `No ${activeFilter} expenses` : 'No expenses yet';
+          elements.emptyDescription.textContent = isFiltered
+            ? `There are no ${activeFilter.toLowerCase()} expenses in your records. Try another category or add a new one.`
+            : 'Keep a clear record of your spending. Add your first expense to get started.';
+          $('#emptyAddButton').classList.toggle('hidden', isFiltered);
+          elements.expenseRows.innerHTML = '';
+        } else {
+          let runningTotal = 0;
+          elements.expenseRows.innerHTML = visibleExpenses.map((expense) => {
+            runningTotal += expense.amount;
+            const category = CATEGORIES[expense.category];
+            const safeTitle = escapeHTML(expense.title || 'No description');
+            const titleClass = expense.title ? 'text-slate-700' : 'italic text-slate-400';
+            return `
+              <article class="expense-row relative px-4 py-4 transition hover:bg-slate-50/80 sm:px-5 md:grid md:grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] md:items-center md:gap-4">
+                <div class="flex items-center justify-between gap-3 md:block">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Date</span>
+                  <time datetime="${escapeHTML(expense.date)}" class="text-sm font-bold text-slate-700">${escapeHTML(expense.date)}</time>
+                </div>
+                <div class="mt-3 flex min-w-0 items-center gap-3 md:mt-0">
+                  <span class="category-icon grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${category.color}" aria-hidden="true">${category.emoji}</span>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-extrabold text-ink">${escapeHTML(expense.category)}</p>
+                    <p class="mt-0.5 truncate text-xs ${titleClass}">${safeTitle}</p>
+                  </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-3 md:mt-0 md:justify-end">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Price</span>
+                  <span class="text-sm font-extrabold text-slate-800">${money(expense.amount)}</span>
+                </div>
+                <div class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-100 pt-2 md:mt-0 md:justify-end md:border-0 md:p-0">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Running sum</span>
+                  <span class="text-sm font-extrabold text-brand-700">${money(runningTotal)}</span>
+                </div>
+                <div class="absolute right-4 top-3 md:static md:mt-0 md:justify-self-end">
+                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
+                    <i data-lucide="trash-2" class="h-4 w-4" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </article>`;
+          }).join('');
+        }
+        refreshIcons();
+      }
+
+      function openExpenseModal() {
+        lastFocusedElement = document.activeElement;
+        elements.expenseForm.reset();
+        elements.expenseDate.value = localDateISO();
+        elements.expenseCategory.value = activeFilter !== 'All' ? activeFilter : 'Travel';
+        elements.expenseModal.classList.remove('hidden');
+        elements.expenseModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        window.setTimeout(() => elements.expenseDate.focus(), 50);
+      }
+
+      function closeExpenseModal() {
+        elements.expenseModal.classList.add('hidden');
+        elements.expenseModal.classList.remove('flex');
+        document.body.style.overflow = '';
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+      }
+
+      function openConfirmation({ title, description, actionLabel, action }) {
+        lastFocusedElement = document.activeElement;
+        pendingConfirmation = action;
+        elements.confirmTitle.textContent = title;
+        elements.confirmDescription.textContent = description;
+        elements.confirmActionButton.textContent = actionLabel;
+        elements.confirmModal.classList.remove('hidden');
+        elements.confirmModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        window.setTimeout(() => elements.confirmActionButton.focus(), 50);
+      }
+
+      function closeConfirmation() {
+        elements.confirmModal.classList.add('hidden');
+        elements.confirmModal.classList.remove('flex');
+        pendingConfirmation = null;
+        document.body.style.overflow = '';
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+      }
+
+      function showToast(message, type = 'success') {
+        const style = type === 'error'
+          ? 'border-rose-100 bg-rose-50 text-rose-800'
+          : 'border-brand-100 bg-white text-slate-700';
+        const icon = type === 'error' ? 'circle-alert' : 'circle-check';
+        const toast = document.createElement('div');
+        toast.className = `toast-in flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold shadow-lg ${style}`;
+        toast.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5 shrink-0 ${type === 'error' ? 'text-rose-600' : 'text-brand-600'}" aria-hidden="true"></i><span>${escapeHTML(message)}</span>`;
+        elements.toastRegion.replaceChildren(toast);
+        refreshIcons();
+        window.setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+      }
+
+      function csvCell(value) {
+        const text = String(value ?? '');
+        return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      }
+
+      function exportCSV() {
+        const visibleExpenses = getFilteredExpenses();
+        if (!visibleExpenses.length) {
+          showToast('There are no expenses to export.', 'error');
+          return;
+        }
+        let runningTotal = 0;
+        const rows = visibleExpenses.map((expense) => {
+          runningTotal += expense.amount;
+          return [expense.date, expense.category, expense.title || '', expense.amount.toFixed(2), runningTotal.toFixed(2)];
+        });
+        const csv = [['Date', 'Category', 'Description', 'Price (INR)', 'Running Total (INR)'], ...rows]
+          .map((row) => row.map(csvCell).join(','))
+          .join('\r\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const filterSuffix = activeFilter === 'All' ? 'all-expenses' : activeFilter.toLowerCase().replace(/\s+/g, '-');
+        link.download = `expense-tracker-${filterSuffix}-${localDateISO()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+        showToast(`${visibleExpenses.length} ${visibleExpenses.length === 1 ? 'expense' : 'expenses'} exported to CSV.`);
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+        const formData = new FormData(elements.expenseForm);
+        const date = String(formData.get('date') || '');
+        const category = String(formData.get('category') || '');
+        const title = String(formData.get('title') || '').trim();
+        const amount = Number(formData.get('amount'));
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !CATEGORIES[category] || !Number.isFinite(amount) || amount <= 0) {
+          showToast('Please enter a valid date, category, and amount.', 'error');
+          return;
+        }
+        expenses.push({
+          id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          date,
+          category,
+          title: title.slice(0, 80),
+          amount: Math.round(amount * 100) / 100,
+          createdAt: Date.now()
+        });
+        saveExpenses();
+        closeExpenseModal();
+        render();
+        showToast('Expense added successfully.');
+      }
+
+      function deleteExpense(id) {
+        const expense = expenses.find((item) => item.id === id);
+        if (!expense) return;
+        openConfirmation({
+          title: 'Remove expense?',
+          description: `${expense.category} · ${money(expense.amount)} from ${formatLongDate(expense.date)} will be permanently removed.`,
+          actionLabel: 'Remove',
+          action: () => {
+            expenses = expenses.filter((item) => item.id !== id);
+            saveExpenses();
+            render();
+            showToast('Expense removed.');
+          }
+        });
+      }
+
+      function clearAllExpenses() {
+        if (!expenses.length) return;
+        openConfirmation({
+          title: 'Clear all expenses?',
+          description: `This will permanently remove all ${expenses.length} recorded ${expenses.length === 1 ? 'expense' : 'expenses'} from this browser.`,
+          actionLabel: 'Clear all',
+          action: () => {
+            expenses = [];
+            saveExpenses();
+            render();
+            showToast('All expenses cleared.');
+          }
+        });
+      }
+
+      function initialize() {
+        elements.todayBadge.textContent = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date());
+        $('#addExpenseButton').addEventListener('click', openExpenseModal);
+        $('#bottomAddButton').addEventListener('click', openExpenseModal);
+        $('#emptyAddButton').addEventListener('click', openExpenseModal);
+        $('#closeModalButton').addEventListener('click', closeExpenseModal);
+        $('#cancelModalButton').addEventListener('click', closeExpenseModal);
+        $('#exportButton').addEventListener('click', exportCSV);
+        $('#clearAllButton').addEventListener('click', clearAllExpenses);
+        elements.clearFilterButton.addEventListener('click', () => {
+          activeFilter = 'All';
+          elements.categoryFilter.value = 'All';
+          render();
+        });
+        elements.categoryFilter.addEventListener('change', (event) => {
+          activeFilter = event.target.value;
+          render();
+        });
+        elements.expenseForm.addEventListener('submit', handleSubmit);
+        elements.expenseRows.addEventListener('click', (event) => {
+          const button = event.target.closest('[data-delete-id]');
+          if (button) deleteExpense(button.dataset.deleteId);
+        });
+        $('#confirmCancelButton').addEventListener('click', closeConfirmation);
+        elements.confirmActionButton.addEventListener('click', () => {
+          const action = pendingConfirmation;
+          closeConfirmation();
+          if (action) action();
+        });
+        elements.expenseModal.addEventListener('click', (event) => {
+          if (event.target === elements.expenseModal) closeExpenseModal();
+        });
+        elements.confirmModal.addEventListener('click', (event) => {
+          if (event.target === elements.confirmModal) closeConfirmation();
+        });
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            if (!elements.confirmModal.classList.contains('hidden')) closeConfirmation();
+            else if (!elements.expenseModal.classList.contains('hidden')) closeExpenseModal();
+          }
+        });
+        render();
+        refreshIcons();
+      }
+
+      initialize();
+    })();
+  </script>
+</body>
+</html>
