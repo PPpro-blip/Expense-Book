@@ -1,22 +1,39 @@
 # Expense Tracker Pro
 
-A polished, mobile-first expense tracker that works entirely in the browser. It is designed as a lightweight, app-like single page for quickly recording everyday expenses.
+A polished, private expense tracker that now works as an installable **Progressive Web App**. It records everyday spending entirely in the browser and defaults to **Indian Rupees (₹ / INR)**.
 
-## Features
+## Highlights
 
-- Add dated expenses in the five required categories: **Travel**, **Fuel**, **Food**, **Hotel**, and **Company Related**
-- Optional description for every entry
-- Four-column expense history: **Date**, **Expenses (Category)**, **Price**, and cumulative **Sum**
-- Grand total, entry count, current-month total, and top-category insights
-- Filter records by category, including a filtered total
-- Delete an individual record or clear all records (both use a confirmation dialog)
-- Export the current list/filter as a UTF-8 CSV file
-- Responsive, touch-friendly Play Store-inspired UI
-- Private browser persistence through `localStorage` — no account or server required
+- Installable on Android, iPhone/iPad, tablets, and desktop as a standalone app
+- Offline-ready app shell with a service worker; saved expenses remain in browser `localStorage`
+- PWA manifest, home-screen icons, theme color, and iOS web-app metadata
+- Add dated expenses in five categories: **Travel**, **Fuel**, **Food**, **Hotel**, and **Company Related**
+- Indian currency formatting with the `en-IN` locale (`₹1,23,456.00`)
+- Grand total, entry count, current-month total, and top-category insight cards
+- Category filtering, single-record deletion, clear-all confirmation, and UTF-8 CSV export
+- A touch-friendly, horizontally swipeable expense table on small screens
+
+## Responsive layout
+
+| Viewport | Layout behavior |
+| --- | --- |
+| **Mobile** (`<640px`) | Single-column dashboard cards, 44px+ touch targets, swipeable history table, and a fixed bottom action bar. |
+| **Tablet** (`640px–1024px`) | A 2×2 stats grid, side-by-side controls, and comfortable table spacing. |
+| **Desktop** (`>1024px`) | Full four-card dashboard and wide history view. |
+
+## PWA and offline behavior
+
+The app registers `sw.js` after the first page load. The service worker pre-caches the app shell, manifest, and app icons and runtime-caches UI resources, so subsequent visits can open the tracker without a connection. Expense records live only on the device in the local-storage key `expense-tracker-pro-expenses-v1`.
+
+- **Chrome / Edge / Android:** use the in-app **Install app** control when it appears, or the browser’s install menu.
+- **iPhone / iPad:** open in Safari, choose **Share → Add to Home Screen**, then tap **Add**. The in-app install button shows these steps on iOS.
+- Use **Export CSV** for a portable backup. Clearing browser site data also clears local expenses.
+
+> Service workers require a secure context: use HTTPS in production, or `localhost` while developing.
 
 ## Run locally
 
-This is a dependency-free static web app. Open `index.html` directly in a browser, or serve the directory with any static server:
+This is a dependency-free static web app—no build step is required. Serve it rather than opening the file directly if you want to test service-worker behavior:
 
 ```bash
 python3 -m http.server 8080
@@ -24,16 +41,12 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080`.
 
-## Data and privacy
-
-Expense records are stored only in the current browser under the local storage key `expense-tracker-pro-expenses-v1`. Clearing browser site data will remove them. Use **Export CSV** for a portable backup.
-
 ## Deploy to Vercel
 
 The included `vercel.json` configures this repository as a static Vercel deployment.
 
-1. Push this repository to GitHub.
-2. In Vercel, choose **Add New → Project** and import the GitHub repository.
+1. Push the repository to GitHub.
+2. In Vercel, choose **Add New → Project** and import the repository.
 3. Leave the framework preset as **Other** and the build command blank.
 4. Click **Deploy**.
 
@@ -45,11 +58,17 @@ vercel --prod
 
 No environment variables or build step are required.
 
-## Project files
+## Project structure
 
 ```text
 .
-├── index.html     # Entire single-page application
-├── README.md      # Project documentation
-└── vercel.json    # Static deployment configuration
+├── assets/
+│   ├── icon.svg          # Source app icon
+│   ├── icon-192.png      # App / Apple touch icon
+│   └── icon-512.png      # Large install icon
+├── index.html            # Responsive single-page app and PWA registration
+├── manifest.json         # Web app manifest
+├── sw.js                 # Offline app-shell service worker
+├── README.md
+└── vercel.json
 ```
