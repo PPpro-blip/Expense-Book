@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="description" content="Expense Tracker Pro — a simple, private way to track every expense.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b7f6b">
+  <meta name="description" content="Expense Tracker Pro — a private, offline-ready way to track every expense in Indian Rupees.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Expenses">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <title>Expense Tracker Pro</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,6 +37,7 @@
       }
     };
   </script>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <link rel="preconnect" href="https://unpkg.com">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -59,7 +67,20 @@
     .toast-in { animation: toast-in .24s ease-out; }
     .hide-scrollbar { scrollbar-width: none; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .table-scroll {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scrollbar-color: #9adfd0 transparent;
+      scrollbar-width: thin;
+    }
+    .table-scroll:focus-visible { outline: 3px solid rgba(15, 159, 133, .35); outline-offset: -3px; }
     input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+    @supports (padding: max(0px)) {
+      .safe-bottom { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+    }
+    @media (max-width: 639px) {
+      .expense-row { min-height: 72px; }
+    }
     @media (min-width: 768px) {
       .app-shell { padding: 32px; }
       .app-frame { min-height: calc(100vh - 64px); }
@@ -71,7 +92,7 @@
     <section class="app-frame relative overflow-hidden bg-[#f9fbfc] md:rounded-[2rem] md:border md:border-white md:shadow-app">
       <div class="pointer-events-none absolute inset-0 mesh-dot opacity-30"></div>
 
-      <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-40 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-9">
+      <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-44 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-9">
         <header class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3 sm:gap-4">
             <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white shadow-float sm:h-14 sm:w-14">
@@ -82,13 +103,19 @@
               <h1 class="truncate text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Expense Tracker Pro</h1>
             </div>
           </div>
-          <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm sm:flex">
-            <i data-lucide="calendar-days" class="h-4 w-4 text-brand-600" aria-hidden="true"></i>
-            <span id="todayBadge">Today</span>
+          <div class="flex shrink-0 items-center gap-2">
+            <button id="installAppButton" type="button" class="hidden h-10 items-center justify-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-3 text-xs font-extrabold text-brand-700 shadow-sm transition hover:bg-brand-100 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Install Expense Tracker Pro">
+              <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
+              <span class="hidden sm:inline">Install app</span>
+            </button>
+            <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm sm:flex">
+              <i data-lucide="calendar-days" class="h-4 w-4 text-brand-600" aria-hidden="true"></i>
+              <span id="todayBadge">Today</span>
+            </div>
           </div>
         </header>
 
-        <section aria-label="Expense overview" class="mt-5 grid grid-cols-2 gap-3 lg:mt-7 lg:grid-cols-4">
+        <section aria-label="Expense overview" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-7 lg:grid-cols-4">
           <article class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-brand-600 to-brand-500 p-4 text-white shadow-lg shadow-brand-600/15 sm:p-5">
             <div class="flex items-center justify-between gap-2">
               <p class="text-xs font-semibold uppercase tracking-wider text-white/75">Grand total</p>
@@ -105,7 +132,7 @@
             <p id="entryCount" class="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">0</p>
             <p class="mt-1 text-xs text-slate-500">Expenses logged</p>
           </article>
-          <article class="hidden rounded-2xl border border-white bg-white/90 p-5 shadow-sm lg:block">
+          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
             <div class="flex items-center justify-between gap-2">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">This month</p>
               <span class="grid h-8 w-8 place-items-center rounded-xl bg-amber-50 text-amber-600"><i data-lucide="calendar-range" class="h-4 w-4" aria-hidden="true"></i></span>
@@ -113,7 +140,7 @@
             <p id="monthTotal" class="mt-2 text-3xl font-extrabold tracking-tight text-ink">₹0.00</p>
             <p id="monthCaption" class="mt-1 text-xs text-slate-500">No activity yet</p>
           </article>
-          <article class="hidden rounded-2xl border border-white bg-white/90 p-5 shadow-sm lg:block">
+          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
             <div class="flex items-center justify-between gap-2">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Top category</p>
               <span class="grid h-8 w-8 place-items-center rounded-xl bg-violet-50 text-violet-600"><i data-lucide="chart-no-axes-combined" class="h-4 w-4" aria-hidden="true"></i></span>
@@ -124,7 +151,7 @@
         </section>
 
         <section class="mt-5 rounded-2xl border border-slate-200/80 bg-white/85 p-3 shadow-sm backdrop-blur-sm sm:mt-6 sm:p-4" aria-label="Expense actions">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="grid grid-cols-2 gap-2 sm:flex">
               <button id="addExpenseButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
                 <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
@@ -171,6 +198,8 @@
             </button>
           </div>
 
+          <p id="tableScrollHint" class="border-b border-slate-100 px-4 pb-2 text-[11px] font-semibold text-slate-400 sm:hidden">Swipe the table horizontally to view every column.</p>
+
           <div id="emptyState" class="px-5 py-14 text-center sm:py-16">
             <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-brand-50 text-brand-600">
               <i data-lucide="receipt" class="h-8 w-8" aria-hidden="true"></i>
@@ -184,19 +213,23 @@
           </div>
 
           <div id="tableContainer" class="hidden">
-            <div class="hidden grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-slate-50 px-5 py-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 md:grid">
-              <span>Date</span>
-              <span>Expenses (Category)</span>
-              <span class="text-right">Price</span>
-              <span class="text-right">Sum</span>
-              <span class="sr-only">Actions</span>
+            <div class="table-scroll overflow-x-auto" tabindex="0" aria-label="Expense history table. Swipe horizontally to view all columns.">
+              <div class="min-w-[640px]">
+                <div class="grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-slate-50 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 sm:px-5">
+                  <span>Date</span>
+                  <span>Expenses (Category)</span>
+                  <span class="text-right">Price</span>
+                  <span class="text-right">Sum</span>
+                  <span class="sr-only">Actions</span>
+                </div>
+                <div id="expenseRows" class="divide-y divide-slate-100"></div>
+              </div>
             </div>
-            <div id="expenseRows" class="divide-y divide-slate-100"></div>
           </div>
         </section>
       </div>
 
-      <footer id="totalBar" class="fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-white/95 px-4 py-3 shadow-[0_-8px_26px_rgba(23,32,51,.09)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
+      <footer id="totalBar" class="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-white/95 px-4 py-3 shadow-[0_-8px_26px_rgba(23,32,51,.09)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
             <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -284,6 +317,25 @@
     </div>
   </div>
 
+  <div id="installHelpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 p-5 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
+    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-2xl">
+      <div class="flex items-start justify-between gap-4">
+        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600"><i data-lucide="smartphone" class="h-6 w-6" aria-hidden="true"></i></div>
+        <button id="closeInstallHelpButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close install instructions"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button>
+      </div>
+      <h2 id="installHelpTitle" class="mt-4 text-lg font-extrabold text-ink">Install Expense Tracker Pro</h2>
+      <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+        <p>On iPhone or iPad, this app installs from Safari’s Share menu.</p>
+        <ol class="list-decimal space-y-1 pl-5">
+          <li>Tap the <strong class="font-extrabold text-slate-800">Share</strong> button in Safari.</li>
+          <li>Choose <strong class="font-extrabold text-slate-800">Add to Home Screen</strong>.</li>
+          <li>Tap <strong class="font-extrabold text-slate-800">Add</strong> to use it like an app.</li>
+        </ol>
+      </div>
+      <button id="installHelpDoneButton" type="button" class="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">Got it</button>
+    </div>
+  </div>
+
   <div id="toastRegion" class="pointer-events-none fixed bottom-24 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2" aria-live="polite" aria-atomic="true"></div>
 
   <script>
@@ -318,6 +370,7 @@
         emptyTitle: $('#emptyTitle'),
         emptyDescription: $('#emptyDescription'),
         tableContainer: $('#tableContainer'),
+        tableScrollHint: $('#tableScrollHint'),
         expenseRows: $('#expenseRows'),
         summaryLabel: $('#summaryLabel'),
         summaryTotal: $('#summaryTotal'),
@@ -333,6 +386,8 @@
         confirmTitle: $('#confirmTitle'),
         confirmDescription: $('#confirmDescription'),
         confirmActionButton: $('#confirmActionButton'),
+        installAppButton: $('#installAppButton'),
+        installHelpModal: $('#installHelpModal'),
         toastRegion: $('#toastRegion')
       };
 
@@ -340,6 +395,9 @@
       let activeFilter = 'All';
       let pendingConfirmation = null;
       let lastFocusedElement = null;
+      let deferredInstallPrompt = null;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       function localDateISO(date = new Date()) {
         const tzOffset = date.getTimezoneOffset() * 60000;
@@ -415,6 +473,52 @@
         if (window.lucide) window.lucide.createIcons();
       }
 
+      function isStandalone() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      }
+
+      function updateInstallControl(isVisible) {
+        elements.installAppButton.classList.toggle('hidden', !isVisible);
+        elements.installAppButton.classList.toggle('inline-flex', isVisible);
+      }
+
+      function openInstallHelp() {
+        lastFocusedElement = document.activeElement;
+        elements.installHelpModal.classList.remove('hidden');
+        elements.installHelpModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        window.setTimeout(() => $('#installHelpDoneButton').focus(), 50);
+      }
+
+      function closeInstallHelp() {
+        elements.installHelpModal.classList.add('hidden');
+        elements.installHelpModal.classList.remove('flex');
+        document.body.style.overflow = '';
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+      }
+
+      async function installApp() {
+        if (deferredInstallPrompt) {
+          const installPrompt = deferredInstallPrompt;
+          deferredInstallPrompt = null;
+          updateInstallControl(false);
+          installPrompt.prompt();
+          const choice = await installPrompt.userChoice;
+          if (choice.outcome === 'accepted') showToast('Expense Tracker Pro is installing.');
+          return;
+        }
+        if (isIOS && !isStandalone()) openInstallHelp();
+      }
+
+      function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch((error) => {
+            console.warn('Service worker registration failed.', error);
+          });
+        }, { once: true });
+      }
+
       function render() {
         const visibleExpenses = getFilteredExpenses();
         const grandTotal = totalOf(expenses);
@@ -453,6 +557,7 @@
         const noVisibleExpenses = visibleExpenses.length === 0;
         elements.emptyState.classList.toggle('hidden', !noVisibleExpenses);
         elements.tableContainer.classList.toggle('hidden', noVisibleExpenses);
+        elements.tableScrollHint.classList.toggle('hidden', noVisibleExpenses);
         if (noVisibleExpenses) {
           elements.emptyTitle.textContent = isFiltered ? `No ${activeFilter} expenses` : 'No expenses yet';
           elements.emptyDescription.textContent = isFiltered
@@ -468,28 +573,25 @@
             const safeTitle = escapeHTML(expense.title || 'No description');
             const titleClass = expense.title ? 'text-slate-700' : 'italic text-slate-400';
             return `
-              <article class="expense-row relative px-4 py-4 transition hover:bg-slate-50/80 sm:px-5 md:grid md:grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] md:items-center md:gap-4">
-                <div class="flex items-center justify-between gap-3 md:block">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Date</span>
+              <article class="expense-row grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 px-4 py-3.5 transition hover:bg-slate-50/80 sm:px-5" role="row">
+                <div role="cell">
                   <time datetime="${escapeHTML(expense.date)}" class="text-sm font-bold text-slate-700">${escapeHTML(expense.date)}</time>
                 </div>
-                <div class="mt-3 flex min-w-0 items-center gap-3 md:mt-0">
+                <div class="flex min-w-0 items-center gap-3" role="cell">
                   <span class="category-icon grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${category.color}" aria-hidden="true">${category.emoji}</span>
                   <div class="min-w-0">
                     <p class="truncate text-sm font-extrabold text-ink">${escapeHTML(expense.category)}</p>
                     <p class="mt-0.5 truncate text-xs ${titleClass}">${safeTitle}</p>
                   </div>
                 </div>
-                <div class="mt-3 flex items-center justify-between gap-3 md:mt-0 md:justify-end">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Price</span>
+                <div class="text-right" role="cell">
                   <span class="text-sm font-extrabold text-slate-800">${money(expense.amount)}</span>
                 </div>
-                <div class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-100 pt-2 md:mt-0 md:justify-end md:border-0 md:p-0">
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 md:hidden">Running sum</span>
+                <div class="text-right" role="cell">
                   <span class="text-sm font-extrabold text-brand-700">${money(runningTotal)}</span>
                 </div>
-                <div class="absolute right-4 top-3 md:static md:mt-0 md:justify-self-end">
-                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
+                <div class="justify-self-end" role="cell">
+                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-10 w-10 place-items-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
                     <i data-lucide="trash-2" class="h-4 w-4" aria-hidden="true"></i>
                   </button>
                 </div>
@@ -639,6 +741,27 @@
 
       function initialize() {
         elements.todayBadge.textContent = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date());
+        window.addEventListener('beforeinstallprompt', (event) => {
+          event.preventDefault();
+          deferredInstallPrompt = event;
+          updateInstallControl(true);
+        });
+        window.addEventListener('appinstalled', () => {
+          deferredInstallPrompt = null;
+          updateInstallControl(false);
+          showToast('Expense Tracker Pro is ready on your device.');
+        });
+        if (isIOS && !isStandalone()) updateInstallControl(true);
+        registerServiceWorker();
+
+        elements.installAppButton.addEventListener('click', () => {
+          installApp().catch((error) => {
+            console.warn('Install prompt failed.', error);
+            showToast('The install prompt could not be opened. Please try again.', 'error');
+          });
+        });
+        $('#closeInstallHelpButton').addEventListener('click', closeInstallHelp);
+        $('#installHelpDoneButton').addEventListener('click', closeInstallHelp);
         $('#addExpenseButton').addEventListener('click', openExpenseModal);
         $('#bottomAddButton').addEventListener('click', openExpenseModal);
         $('#emptyAddButton').addEventListener('click', openExpenseModal);
@@ -672,9 +795,13 @@
         elements.confirmModal.addEventListener('click', (event) => {
           if (event.target === elements.confirmModal) closeConfirmation();
         });
+        elements.installHelpModal.addEventListener('click', (event) => {
+          if (event.target === elements.installHelpModal) closeInstallHelp();
+        });
         document.addEventListener('keydown', (event) => {
           if (event.key === 'Escape') {
-            if (!elements.confirmModal.classList.contains('hidden')) closeConfirmation();
+            if (!elements.installHelpModal.classList.contains('hidden')) closeInstallHelp();
+            else if (!elements.confirmModal.classList.contains('hidden')) closeConfirmation();
             else if (!elements.expenseModal.classList.contains('hidden')) closeExpenseModal();
           }
         });
