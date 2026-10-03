@@ -1,12 +1,17 @@
 /* Expense Tracker Pro — static app shell only. User data is never requested or cached here. */
-const CACHE_NAME = 'expense-tracker-pro-v4';
+const CACHE_NAME = 'expense-tracker-pro-v5';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './assets/icon.svg',
+  './assets/master-asset.svg',
+  './assets/master-asset.png',
+  './assets/master-asset-maskable.svg',
   './assets/icon-192.png',
-  './assets/icon-512.png'
+  './assets/icon-512.png',
+  './assets/icon-maskable-192.png',
+  './assets/icon-maskable-512.png',
+  './assets/apple-touch-icon.png'
 ];
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com/',
