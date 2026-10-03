@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b7f6b">
+  <meta name="theme-color" content="#1D7373">
   <meta name="description" content="Expense Tracker Pro — a private, offline-ready way to track every expense in Indian Rupees.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Expenses">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" href="assets/master-asset.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <title>Expense Tracker Pro</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -20,18 +21,42 @@
       theme: {
         extend: {
           colors: {
-            ink: '#172033',
+            /* Artisanal palette — faded ink, weathered teal, aged leather, sepia paper */
+            ink: '#2A2A2A',
             brand: {
-              50: '#effcf9',
-              100: '#d5f7ee',
-              500: '#0f9f85',
-              600: '#0b7f6b',
-              700: '#086755'
-            }
+              50: '#E9F2F0',
+              100: '#CFE3E0',
+              200: '#A9CCC8',
+              500: '#258E8E',
+              600: '#1D7373',
+              700: '#155959',
+              800: '#0F4444',
+              900: '#0A3030'
+            },
+            leather: {
+              50: '#F7EDE0',
+              100: '#EFDCC4',
+              200: '#E3CDA4',
+              500: '#A6612F',
+              600: '#8C5024',
+              700: '#6F3F1C'
+            },
+            sepia: {
+              50: '#FDF5E6',
+              100: '#FAF0E6',
+              200: '#F3E8D5',
+              300: '#E3D3B8',
+              400: '#C8B494'
+            },
+            twine: '#C8A77A'
+          },
+          fontFamily: {
+            display: ['"Georgia"', 'ui-serif', 'Cambria', '"Times New Roman"', 'serif']
           },
           boxShadow: {
-            app: '0 24px 70px rgba(23, 32, 51, 0.14)',
-            float: '0 14px 30px rgba(15, 159, 133, 0.25)'
+            app: '0 24px 70px rgba(42, 42, 42, 0.16)',
+            float: '0 14px 30px rgba(29, 115, 115, 0.28)',
+            leather: '0 10px 24px rgba(111, 63, 28, 0.22)'
           }
         }
       }
@@ -41,26 +66,112 @@
   <link rel="preconnect" href="https://unpkg.com">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    :root { color-scheme: light; }
+    /* ── Artisanal theme tokens ─────────────────────────────────────────── */
+    :root {
+      color-scheme: light;
+      --teal: #1D7373;          /* Primary — weathered teal */
+      --teal-light: #258E8E;
+      --teal-dark: #155959;
+      --teal-ink: #0F4444;
+      --leather: #A6612F;       /* Secondary — aged leather */
+      --leather-dark: #6F3F1C;
+      --leather-soft: #E3CDA4;
+      --sepia: #FDF5E6;         /* Accent — off-white sepia card stock */
+      --paper: #FAF0E6;         /* Weathered paper page */
+      --paper-edge: #E3D3B8;
+      --twine: #C8A77A;
+      --ink: #2A2A2A;           /* Faded ink black */
+      --ink-soft: #7C6C56;
+      /* Hand-made paper grain, drawn once and reused everywhere */
+      --grain:
+        radial-gradient(circle at 18% 22%, rgba(166, 97, 47, .055) 0 2px, transparent 3px),
+        radial-gradient(circle at 72% 64%, rgba(42, 42, 42, .045) 0 1.5px, transparent 3px),
+        radial-gradient(circle at 44% 86%, rgba(166, 97, 47, .05) 0 2px, transparent 3px),
+        radial-gradient(circle at 88% 12%, rgba(42, 42, 42, .035) 0 1.5px, transparent 3px);
+    }
     * { -webkit-tap-highlight-color: transparent; }
-    html { background: #eef3f5; }
+    html { background: var(--paper); }
     body {
       min-height: 100vh;
       margin: 0;
-      color: #172033;
+      color: var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(72, 204, 171, .18), transparent 27rem),
-        radial-gradient(circle at 100% 15%, rgba(253, 196, 96, .14), transparent 24rem),
-        #eef3f5;
+      /* Very subtle weathered-paper texture over #FAF0E6 */
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(circle at 0% 0%, rgba(29, 115, 115, .10), transparent 28rem),
+        radial-gradient(circle at 100% 12%, rgba(166, 97, 47, .10), transparent 26rem),
+        radial-gradient(circle at 62% 100%, rgba(200, 167, 122, .14), transparent 30rem),
+        repeating-linear-gradient(103deg, rgba(166, 97, 47, .030) 0 1px, transparent 1px 7px),
+        repeating-linear-gradient(13deg, rgba(42, 42, 42, .022) 0 1px, transparent 1px 9px),
+        var(--grain);
+      background-attachment: fixed;
     }
     button, input, select { font: inherit; }
     button { -webkit-user-select: none; user-select: none; }
     .app-shell { min-height: 100vh; }
     .app-frame { min-height: 100vh; }
-    .mesh-dot { background-image: radial-gradient(rgba(15, 159, 133, .13) 1px, transparent 1px); background-size: 16px 16px; }
-    .category-icon { transition: transform .18s ease; }
+    .mesh-dot { background-image: radial-gradient(rgba(166, 97, 47, .16) 1px, transparent 1px); background-size: 18px 18px; }
+
+    /* ── Weathered teal masthead with an aged paper overlay ─────────────── */
+    .masthead {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      border: 1px solid rgba(15, 68, 68, .55);
+      border-radius: 1.25rem;
+      background-color: var(--teal);
+      background-image: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 48%, var(--teal-dark) 100%);
+      box-shadow: 0 16px 34px rgba(15, 68, 68, .26), inset 0 1px 0 rgba(253, 245, 230, .18);
+    }
+    .masthead::before {
+      /* aged paper overlay — fibres, foxing specks and a weathered wash */
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: .85;
+      background-image:
+        radial-gradient(ellipse at 12% 0%, rgba(253, 245, 230, .20), transparent 60%),
+        radial-gradient(ellipse at 92% 120%, rgba(253, 245, 230, .14), transparent 55%),
+        repeating-linear-gradient(97deg, rgba(253, 245, 230, .07) 0 1px, transparent 1px 6px),
+        repeating-linear-gradient(7deg, rgba(10, 48, 48, .10) 0 1px, transparent 1px 8px),
+        radial-gradient(circle at 26% 68%, rgba(200, 167, 122, .16) 0 3px, transparent 4px),
+        radial-gradient(circle at 78% 26%, rgba(200, 167, 122, .14) 0 2px, transparent 3px);
+      mix-blend-mode: soft-light;
+    }
+    .masthead::after {
+      /* worn edge vignette */
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: radial-gradient(120% 90% at 50% 35%, transparent 52%, rgba(6, 48, 47, .42) 100%);
+      pointer-events: none;
+    }
+    .masthead-logo {
+      display: block;
+      border-radius: 1rem;
+      box-shadow: 0 10px 22px rgba(10, 48, 48, .38), 0 0 0 1px rgba(253, 245, 230, .32);
+    }
+
+    /* ── Sepia card stock ───────────────────────────────────────────────── */
+    .card-stock {
+      background-color: var(--sepia);
+      background-image: var(--grain);
+    }
+    .rule-stitch { border-top: 1px dashed rgba(166, 97, 47, .38); }
+
+    /* ── Hand-drawn category marks ──────────────────────────────────────── */
+    .category-icon { transition: transform .18s ease, box-shadow .18s ease; }
+    .category-icon svg { width: 1.375rem; height: 1.375rem; }
     .expense-row:hover .category-icon { transform: scale(1.08) rotate(-3deg); }
+    .cat-ink { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .cat-hatch { fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; opacity: .62; }
+    .cat-fill { fill: currentColor; opacity: .18; stroke: none; }
+    .cat-dot { fill: currentColor; stroke: none; }
+    .select-mark { color: var(--leather); }
+    .select-mark svg { width: 1.25rem; height: 1.25rem; }
     .modal-enter { animation: modal-in .2s ease-out; }
     @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes toast-in { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -70,10 +181,10 @@
     .table-scroll {
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
-      scrollbar-color: #9adfd0 transparent;
+      scrollbar-color: var(--twine) transparent;
       scrollbar-width: thin;
     }
-    .table-scroll:focus-visible { outline: 3px solid rgba(15, 159, 133, .35); outline-offset: -3px; }
+    .table-scroll:focus-visible { outline: 3px solid rgba(29, 115, 115, .38); outline-offset: -3px; }
     input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
     @supports (padding: max(0px)) {
       .safe-bottom { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
@@ -89,108 +200,106 @@
 </head>
 <body>
   <main class="app-shell mx-auto max-w-7xl">
-    <section class="app-frame relative overflow-hidden bg-[#f9fbfc] md:rounded-[2rem] md:border md:border-white md:shadow-app">
+    <section class="app-frame relative overflow-hidden bg-[#FAF0E6] md:rounded-[2rem] md:border md:border-[#EADBC2] md:shadow-app">
       <div class="pointer-events-none absolute inset-0 mesh-dot opacity-30"></div>
 
       <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-44 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-9">
-        <header class="flex items-start justify-between gap-3">
+        <header class="masthead flex items-start justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5">
           <div class="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-600 text-white shadow-float sm:h-14 sm:w-14">
-              <i data-lucide="wallet-cards" class="h-6 w-6 sm:h-7 sm:w-7" aria-hidden="true"></i>
-            </div>
+            <img src="assets/master-asset.svg" alt="" width="56" height="56" class="masthead-logo h-12 w-12 shrink-0 sm:h-14 sm:w-14" aria-hidden="true">
             <div class="min-w-0">
-              <p class="mb-0.5 text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Personal finance</p>
-              <h1 class="truncate text-xl font-extrabold tracking-tight text-ink sm:text-2xl">Expense Tracker Pro</h1>
+              <p class="mb-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFE3E0]">Personal finance ledger</p>
+              <h1 class="truncate text-xl font-extrabold tracking-tight text-[#FDF5E6] sm:text-2xl">Expense Tracker Pro</h1>
             </div>
           </div>
           <div class="flex shrink-0 items-center gap-2">
-            <button id="installAppButton" type="button" class="hidden h-10 items-center justify-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-3 text-xs font-extrabold text-brand-700 shadow-sm transition hover:bg-brand-100 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Install Expense Tracker Pro">
+            <button id="installAppButton" type="button" class="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#FDF5E6]/35 bg-[#FDF5E6]/15 px-3 text-xs font-extrabold text-[#FDF5E6] shadow-sm backdrop-blur-sm transition hover:bg-[#FDF5E6]/25 focus:outline-none focus:ring-4 focus:ring-[#FDF5E6]/25" aria-label="Install Expense Tracker Pro">
               <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
               <span class="hidden sm:inline">Install app</span>
             </button>
-            <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm sm:flex">
-              <i data-lucide="calendar-days" class="h-4 w-4 text-brand-600" aria-hidden="true"></i>
+            <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-[#FDF5E6]/30 bg-[#FDF5E6]/12 px-3 py-2 text-xs font-semibold text-[#FDF5E6] shadow-sm sm:flex">
+              <i data-lucide="calendar-days" class="h-4 w-4 text-[#E3CDA4]" aria-hidden="true"></i>
               <span id="todayBadge">Today</span>
             </div>
           </div>
         </header>
 
         <section aria-label="Expense overview" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-7 lg:grid-cols-4">
-          <article class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-brand-600 to-brand-500 p-4 text-white shadow-lg shadow-brand-600/15 sm:p-5">
+          <article class="masthead p-4 text-[#FDF5E6] sm:p-5">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-white/75">Grand total</p>
-              <i data-lucide="indian-rupee" class="h-4 w-4 text-white/80" aria-hidden="true"></i>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#FDF5E6]/80">Grand total</p>
+              <i data-lucide="indian-rupee" class="h-4 w-4 text-[#E3CDA4]" aria-hidden="true"></i>
             </div>
             <p id="heroTotal" class="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">₹0.00</p>
-            <p class="mt-1 text-xs text-white/75">All recorded expenses</p>
+            <p class="mt-1 text-xs text-[#FDF5E6]/75">All recorded expenses</p>
           </article>
-          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
+          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Entries</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 text-sky-600"><i data-lucide="receipt-text" class="h-4 w-4" aria-hidden="true"></i></span>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">Entries</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#E0EDEA] text-[#1D7373]"><i data-lucide="receipt-text" class="h-4 w-4" aria-hidden="true"></i></span>
             </div>
             <p id="entryCount" class="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">0</p>
-            <p class="mt-1 text-xs text-slate-500">Expenses logged</p>
+            <p class="mt-1 text-xs text-[#7C6C56]">Expenses logged</p>
           </article>
-          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
+          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">This month</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-amber-50 text-amber-600"><i data-lucide="calendar-range" class="h-4 w-4" aria-hidden="true"></i></span>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">This month</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#F7E8D6] text-[#A6612F]"><i data-lucide="calendar-range" class="h-4 w-4" aria-hidden="true"></i></span>
             </div>
             <p id="monthTotal" class="mt-2 text-3xl font-extrabold tracking-tight text-ink">₹0.00</p>
-            <p id="monthCaption" class="mt-1 text-xs text-slate-500">No activity yet</p>
+            <p id="monthCaption" class="mt-1 text-xs text-[#7C6C56]">No activity yet</p>
           </article>
-          <article class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm sm:p-5">
+          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Top category</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-violet-50 text-violet-600"><i data-lucide="chart-no-axes-combined" class="h-4 w-4" aria-hidden="true"></i></span>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">Top category</p>
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#EFE6DA] text-[#5B4636]"><i data-lucide="chart-no-axes-combined" class="h-4 w-4" aria-hidden="true"></i></span>
             </div>
             <p id="topCategory" class="mt-2 truncate text-xl font-extrabold tracking-tight text-ink">—</p>
-            <p id="topCategoryCaption" class="mt-1 text-xs text-slate-500">Add an expense to begin</p>
+            <p id="topCategoryCaption" class="mt-1 text-xs text-[#7C6C56]">Add an expense to begin</p>
           </article>
         </section>
 
-        <section class="mt-5 rounded-2xl border border-slate-200/80 bg-white/85 p-3 shadow-sm backdrop-blur-sm sm:mt-6 sm:p-4" aria-label="Expense actions">
+        <section class="card-stock mt-5 rounded-2xl border border-[#E3D3B8] p-3 shadow-sm sm:mt-6 sm:p-4" aria-label="Expense actions">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="grid grid-cols-2 gap-2 sm:flex">
               <button id="addExpenseButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
                 <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
                 Add Expense
               </button>
-              <button id="exportButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
+              <button id="exportButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E3D3B8] bg-[#FDF5E6] px-4 py-3 text-sm font-bold text-[#4F4134] transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
                 <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
                 Export CSV
               </button>
             </div>
             <div class="flex items-center gap-2">
               <label for="categoryFilter" class="sr-only">Filter expenses by category</label>
-              <span class="hidden text-xs font-bold uppercase tracking-wider text-slate-500 sm:inline">Filter by category</span>
+              <span class="hidden text-xs font-bold uppercase tracking-wider text-[#7C6C56] sm:inline">Filter by category</span>
               <div class="relative flex-1 sm:w-56 sm:flex-none">
-                <i data-lucide="list-filter" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-600" aria-hidden="true"></i>
-                <select id="categoryFilter" class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+                <span id="filterMark" class="select-mark pointer-events-none absolute left-3 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center" aria-hidden="true"></span>
+                <select id="categoryFilter" class="w-full appearance-none rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-11 pr-10 text-sm font-bold text-[#4F4134] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
                   <option value="All">All categories</option>
-                  <option value="Travel">🚗 Travel</option>
-                  <option value="Fuel">⛽ Fuel</option>
-                  <option value="Food">🍕 Food</option>
-                  <option value="Hotel">🏨 Hotel</option>
-                  <option value="Company Related">💼 Company Related</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Fuel">Fuel</option>
+                  <option value="Food">Food</option>
+                  <option value="Hotel">Hotel</option>
+                  <option value="Company Related">Company Related</option>
                 </select>
-                <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true"></i>
+                <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7C6C56]" aria-hidden="true"></i>
               </div>
             </div>
           </div>
-          <div id="activeFilterLine" class="mt-3 hidden items-center gap-2 border-t border-slate-100 pt-3 text-xs font-semibold text-brand-700">
+          <div id="activeFilterLine" class="rule-stitch mt-3 hidden items-center gap-2 pt-3 text-xs font-semibold text-brand-700">
             <i data-lucide="funnel" class="h-3.5 w-3.5" aria-hidden="true"></i>
             <span id="activeFilterText"></span>
             <button id="clearFilterButton" type="button" class="ml-auto underline decoration-brand-300 underline-offset-2 transition hover:text-brand-900">Clear filter</button>
           </div>
         </section>
 
-        <section class="mt-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm sm:mt-6" aria-labelledby="expenseListTitle">
-          <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+        <section class="card-stock mt-5 overflow-hidden rounded-2xl border border-[#E3D3B8] shadow-sm sm:mt-6" aria-labelledby="expenseListTitle">
+          <div class="flex items-center justify-between gap-3 border-b border-[#EEE1CB] px-4 py-4 sm:px-5">
             <div>
               <h2 id="expenseListTitle" class="text-base font-extrabold text-ink">Expense history</h2>
-              <p id="listSubtitle" class="mt-0.5 text-xs text-slate-500">Your expenses will appear here.</p>
+              <p id="listSubtitle" class="mt-0.5 text-xs text-[#7C6C56]">Your expenses will appear here.</p>
             </div>
             <button id="clearAllButton" type="button" class="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Clear all expenses">
               <i data-lucide="trash-2" class="h-3.5 w-3.5" aria-hidden="true"></i>
@@ -198,14 +307,14 @@
             </button>
           </div>
 
-          <p id="tableScrollHint" class="border-b border-slate-100 px-4 pb-2 text-[11px] font-semibold text-slate-400 sm:hidden">Swipe the table horizontally to view every column.</p>
+          <p id="tableScrollHint" class="border-b border-[#EEE1CB] px-4 pb-2 text-[11px] font-semibold text-[#A4947C] sm:hidden">Swipe the table horizontally to view every column.</p>
 
           <div id="emptyState" class="px-5 py-14 text-center sm:py-16">
             <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-brand-50 text-brand-600">
               <i data-lucide="receipt" class="h-8 w-8" aria-hidden="true"></i>
             </div>
             <h3 id="emptyTitle" class="mt-4 text-lg font-extrabold text-ink">No expenses yet</h3>
-            <p id="emptyDescription" class="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">Keep a clear record of your spending. Add your first expense to get started.</p>
+            <p id="emptyDescription" class="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#7C6C56]">Keep a clear record of your spending. Add your first expense to get started.</p>
             <button id="emptyAddButton" type="button" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">
               <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
               Add first expense
@@ -215,28 +324,28 @@
           <div id="tableContainer" class="hidden">
             <div class="table-scroll overflow-x-auto" tabindex="0" aria-label="Expense history table. Swipe horizontally to view all columns.">
               <div class="min-w-[640px]">
-                <div class="grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-slate-50 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 sm:px-5">
+                <div class="grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-[#F6EBD8] px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-[#7C6C56] sm:px-5">
                   <span>Date</span>
                   <span>Expenses (Category)</span>
                   <span class="text-right">Price</span>
                   <span class="text-right">Sum</span>
                   <span class="sr-only">Actions</span>
                 </div>
-                <div id="expenseRows" class="divide-y divide-slate-100"></div>
+                <div id="expenseRows" class="divide-y divide-[#EEE1CB]"></div>
               </div>
             </div>
           </div>
         </section>
       </div>
 
-      <footer id="totalBar" class="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-white/95 px-4 py-3 shadow-[0_-8px_26px_rgba(23,32,51,.09)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
+      <footer id="totalBar" class="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-[#FDF5E6]/95 px-4 py-3 shadow-[0_-8px_26px_rgba(42,42,42,.12)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
             <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
               <i data-lucide="sigma" class="h-5 w-5" aria-hidden="true"></i>
             </div>
             <div class="min-w-0">
-              <p id="summaryLabel" class="truncate text-xs font-semibold text-slate-500">Grand total · 0 entries</p>
+              <p id="summaryLabel" class="truncate text-xs font-semibold text-[#7C6C56]">Grand total · 0 entries</p>
               <p id="summaryTotal" class="text-lg font-extrabold tracking-tight text-ink">₹0.00</p>
             </div>
           </div>
@@ -254,48 +363,52 @@
     </section>
   </main>
 
-  <div id="expenseModal" class="fixed inset-0 z-40 hidden items-end bg-slate-950/40 p-0 backdrop-blur-[2px] sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-enter w-full max-w-lg rounded-t-[2rem] bg-white shadow-2xl sm:rounded-[2rem]">
-      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5">
+  <div id="expenseModal" class="fixed inset-0 z-40 hidden items-end bg-[#2A2A2A]/45 p-0 backdrop-blur-[2px] sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-enter w-full max-w-lg rounded-t-[2rem] bg-[#FDF5E6] shadow-2xl sm:rounded-[2rem]">
+      <div class="flex items-center justify-between border-b border-[#EEE1CB] px-5 py-4 sm:px-6 sm:py-5">
         <div>
           <p class="text-xs font-bold uppercase tracking-[.15em] text-brand-600">New record</p>
           <h2 id="modalTitle" class="mt-0.5 text-xl font-extrabold text-ink">Add an expense</h2>
         </div>
-        <button id="closeModalButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close add expense form">
+        <button id="closeModalButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-[#7C6C56] transition hover:bg-[#F0E2CB] hover:text-[#2A2A2A] focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close add expense form">
           <i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i>
         </button>
       </div>
       <form id="expenseForm" class="px-5 py-5 sm:px-6 sm:py-6">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block">
-            <span class="mb-2 block text-sm font-bold text-slate-700">Date <span class="text-rose-500">*</span></span>
-            <input id="expenseDate" name="date" type="date" required class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+            <span class="mb-2 block text-sm font-bold text-[#4F4134]">Date <span class="text-rose-500">*</span></span>
+            <input id="expenseDate" name="date" type="date" required class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] px-3.5 py-3 text-sm font-semibold text-[#2A2A2A] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
           </label>
           <label class="block">
-            <span class="mb-2 block text-sm font-bold text-slate-700">Category <span class="text-rose-500">*</span></span>
-            <select id="expenseCategory" name="category" required class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
-              <option value="Travel">🚗 Travel</option>
-              <option value="Fuel">⛽ Fuel</option>
-              <option value="Food">🍕 Food</option>
-              <option value="Hotel">🏨 Hotel</option>
-              <option value="Company Related">💼 Company Related</option>
-            </select>
+            <span class="mb-2 block text-sm font-bold text-[#4F4134]">Category <span class="text-rose-500">*</span></span>
+            <span class="relative block">
+              <span id="categoryMark" class="select-mark pointer-events-none absolute left-3.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center" aria-hidden="true"></span>
+              <select id="expenseCategory" name="category" required class="block w-full appearance-none rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-11 pr-10 text-sm font-semibold text-[#2A2A2A] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
+                <option value="Travel">Travel</option>
+                <option value="Fuel">Fuel</option>
+                <option value="Food">Food</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Company Related">Company Related</option>
+              </select>
+              <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7C6C56]" aria-hidden="true"></i>
+            </span>
           </label>
         </div>
         <label class="mt-4 block">
-          <span class="mb-2 block text-sm font-bold text-slate-700">Description / title <span class="font-medium text-slate-400">(optional)</span></span>
-          <input id="expenseTitle" name="title" type="text" maxlength="80" placeholder="e.g. Airport taxi, team lunch" autocomplete="off" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold text-slate-800 placeholder:font-medium placeholder:text-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+          <span class="mb-2 block text-sm font-bold text-[#4F4134]">Description / title <span class="font-medium text-[#A4947C]">(optional)</span></span>
+          <input id="expenseTitle" name="title" type="text" maxlength="80" placeholder="e.g. Airport taxi, team lunch" autocomplete="off" class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] px-3.5 py-3 text-sm font-semibold text-[#2A2A2A] placeholder:font-medium placeholder:text-[#A4947C] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
         </label>
         <div class="mt-4">
-          <label for="expenseAmount" class="mb-2 block text-sm font-bold text-slate-700">Amount <span class="text-rose-500">*</span></label>
+          <label for="expenseAmount" class="mb-2 block text-sm font-bold text-[#4F4134]">Amount <span class="text-rose-500">*</span></label>
           <div class="relative">
             <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-brand-600">₹</span>
-            <input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" required placeholder="0.00" class="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-8 pr-3.5 text-base font-extrabold text-slate-800 placeholder:font-semibold placeholder:text-slate-400 outline-none transition focus:border-brand-500 focus:bg-white focus:ring-4 focus:ring-brand-100">
+            <input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" required placeholder="0.00" class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-8 pr-3.5 text-base font-extrabold text-[#2A2A2A] placeholder:font-semibold placeholder:text-[#A4947C] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-500">Your expense data is stored privately in this browser.</p>
+        <p class="mt-3 text-xs leading-5 text-[#7C6C56]">Your expense data is stored privately in this browser.</p>
         <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button id="cancelModalButton" type="button" class="rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100">Cancel</button>
+          <button id="cancelModalButton" type="button" class="rounded-xl px-4 py-3 text-sm font-bold text-[#6B5B46] transition hover:bg-[#F0E2CB] focus:outline-none focus:ring-4 focus:ring-[#EADBC2]">Cancel</button>
           <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
             <i data-lucide="circle-check" class="h-4 w-4" aria-hidden="true"></i>
             Save expense
@@ -305,31 +418,31 @@
     </div>
   </div>
 
-  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 p-5 backdrop-blur-[2px]" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-2xl">
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#2A2A2A]/45 p-5 backdrop-blur-[2px]" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-[#FDF5E6] p-6 shadow-2xl">
       <div class="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600"><i data-lucide="triangle-alert" class="h-6 w-6" aria-hidden="true"></i></div>
       <h2 id="confirmTitle" class="mt-4 text-lg font-extrabold text-ink">Remove expense?</h2>
-      <p id="confirmDescription" class="mt-2 text-sm leading-6 text-slate-500">This action cannot be undone.</p>
+      <p id="confirmDescription" class="mt-2 text-sm leading-6 text-[#7C6C56]">This action cannot be undone.</p>
       <div class="mt-6 flex gap-2">
-        <button id="confirmCancelButton" type="button" class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">Keep it</button>
+        <button id="confirmCancelButton" type="button" class="flex-1 rounded-xl border border-[#E3D3B8] px-4 py-3 text-sm font-bold text-[#4F4134] transition hover:bg-[#F3E8D5] focus:outline-none focus:ring-4 focus:ring-[#EADBC2]">Keep it</button>
         <button id="confirmActionButton" type="button" class="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100">Remove</button>
       </div>
     </div>
   </div>
 
-  <div id="installHelpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 p-5 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
-    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-white p-6 shadow-2xl">
+  <div id="installHelpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#2A2A2A]/45 p-5 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
+    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-[#FDF5E6] p-6 shadow-2xl">
       <div class="flex items-start justify-between gap-4">
         <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600"><i data-lucide="smartphone" class="h-6 w-6" aria-hidden="true"></i></div>
-        <button id="closeInstallHelpButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close install instructions"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button>
+        <button id="closeInstallHelpButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-[#7C6C56] transition hover:bg-[#F0E2CB] hover:text-[#2A2A2A] focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close install instructions"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button>
       </div>
       <h2 id="installHelpTitle" class="mt-4 text-lg font-extrabold text-ink">Install Expense Tracker Pro</h2>
-      <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+      <div class="mt-3 space-y-3 text-sm leading-6 text-[#6B5B46]">
         <p>On iPhone or iPad, this app installs from Safari’s Share menu.</p>
         <ol class="list-decimal space-y-1 pl-5">
-          <li>Tap the <strong class="font-extrabold text-slate-800">Share</strong> button in Safari.</li>
-          <li>Choose <strong class="font-extrabold text-slate-800">Add to Home Screen</strong>.</li>
-          <li>Tap <strong class="font-extrabold text-slate-800">Add</strong> to use it like an app.</li>
+          <li>Tap the <strong class="font-extrabold text-[#2A2A2A]">Share</strong> button in Safari.</li>
+          <li>Choose <strong class="font-extrabold text-[#2A2A2A]">Add to Home Screen</strong>.</li>
+          <li>Tap <strong class="font-extrabold text-[#2A2A2A]">Add</strong> to use it like an app.</li>
         </ol>
       </div>
       <button id="installHelpDoneButton" type="button" class="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">Got it</button>
@@ -351,13 +464,89 @@
       const LEGACY_STORAGE_KEYS = ['expense-tracker-pro-expenses-v1'];
       let db = null;
 
+      /* ── Hand-drawn, cross-hatched category marks ─────────────────────────
+         Every mark is a single-colour vector outline drawn in the artisanal
+         style of the logo: confident ink contours, light hatching for shade
+         and a soft wash fill. They inherit `currentColor` from their badge. */
       const CATEGORIES = {
-        'Travel': { emoji: '🚗', color: 'bg-sky-50 text-sky-700 ring-sky-100' },
-        'Fuel': { emoji: '⛽', color: 'bg-amber-50 text-amber-700 ring-amber-100' },
-        'Food': { emoji: '🍕', color: 'bg-orange-50 text-orange-700 ring-orange-100' },
-        'Hotel': { emoji: '🏨', color: 'bg-violet-50 text-violet-700 ring-violet-100' },
-        'Company Related': { emoji: '💼', color: 'bg-emerald-50 text-emerald-700 ring-emerald-100' }
+        'Travel': {
+          // Antique mariner's compass
+          color: 'bg-[#E0EDEA] text-[#1D7373] ring-[#1D7373]/25',
+          art: `<circle cx="12" cy="12" r="8.6" class="cat-fill"/>
+                <circle cx="12" cy="12" r="8.6" class="cat-ink"/>
+                <circle cx="12" cy="12" r="6.3" class="cat-hatch"/>
+                <path d="M12 3.4v1.7M12 18.9v1.7M3.4 12h1.7M18.9 12h1.7" class="cat-hatch"/>
+                <path d="M15.6 8.4 10.9 10.9 8.4 15.6 13.1 13.1Z" class="cat-ink"/>
+                <path d="M15.6 8.4 10.9 10.9 13.1 13.1Z" class="cat-fill"/>
+                <circle cx="12" cy="12" r=".85" class="cat-dot"/>`
+        },
+        'Fuel': {
+          // Old-fashioned hand-pump fuel canister
+          color: 'bg-[#F7E8D6] text-[#A6612F] ring-[#A6612F]/25',
+          art: `<path d="M5 8.4c0-.8.6-1.4 1.4-1.4h6.1c.8 0 1.4.6 1.4 1.4v10.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4Z" class="cat-fill"/>
+                <path d="M5 8.4c0-.8.6-1.4 1.4-1.4h6.1c.8 0 1.4.6 1.4 1.4v10.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4Z" class="cat-ink"/>
+                <path d="M8 7V5.4c0-.5.4-.9.9-.9h1.3c.5 0 .9.4.9.9V7" class="cat-ink"/>
+                <path d="M13.9 9.9h2.5c.9 0 1.6.7 1.6 1.6v4c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6" class="cat-ink"/>
+                <path d="M6.9 10.6h5.1M6.9 13.1h5.1M6.9 15.6h3.4" class="cat-hatch"/>
+                <path d="M16.4 11.5v1.6" class="cat-hatch"/>`
+        },
+        'Food': {
+          // Cross-hatched bread loaf with a fork
+          color: 'bg-[#F8E3DA] text-[#A3482B] ring-[#A3482B]/25',
+          art: `<path d="M3.3 14.9c0-3.6 2.3-6.5 5.2-6.5s5.2 2.9 5.2 6.5v3.2c0 .6-.4 1-1 1H4.3c-.6 0-1-.4-1-1Z" class="cat-fill"/>
+                <path d="M3.3 14.9c0-3.6 2.3-6.5 5.2-6.5s5.2 2.9 5.2 6.5v3.2c0 .6-.4 1-1 1H4.3c-.6 0-1-.4-1-1Z" class="cat-ink"/>
+                <path d="M3.4 15.3h10.2" class="cat-hatch"/>
+                <path d="M5 12.3 6.7 10.4M7.3 12.8 9 10.9M9.6 13 11.2 11.3" class="cat-hatch"/>
+                <path d="M17.3 4.4v3.4c0 1.1.9 2 2 2s2-.9 2-2V4.4" class="cat-ink"/>
+                <path d="M19.3 4.4v3.2" class="cat-hatch"/>
+                <path d="M19.3 9.8v9.4" class="cat-ink"/>`
+        },
+        'Hotel': {
+          // Aged skeleton room key
+          color: 'bg-[#E4EDF0] text-[#3F5E6B] ring-[#3F5E6B]/25',
+          art: `<circle cx="6.3" cy="12" r="3.6" class="cat-fill"/>
+                <circle cx="6.3" cy="12" r="3.6" class="cat-ink"/>
+                <circle cx="6.3" cy="12" r="1.4" class="cat-hatch"/>
+                <path d="M9.9 12h10.3" class="cat-ink"/>
+                <path d="M16.5 12v2.9M19.1 12v2.2" class="cat-ink"/>
+                <path d="M12.6 12v-1.7M14.4 12v-1.2" class="cat-hatch"/>`
+        },
+        'Company Related': {
+          // Miniature leather notebook from the logo
+          color: 'bg-[#EFE6DA] text-[#5B4636] ring-[#5B4636]/25',
+          art: `<path d="M5.6 4.3h10.9c.8 0 1.5.7 1.5 1.5v12.4c0 .8-.7 1.5-1.5 1.5H5.6Z" class="cat-fill"/>
+                <path d="M5.6 4.3h10.9c.8 0 1.5.7 1.5 1.5v12.4c0 .8-.7 1.5-1.5 1.5H5.6Z" class="cat-ink"/>
+                <path d="M5.6 4.3c-1 0-1.8.8-1.8 1.8v11.8c0 1 .8 1.8 1.8 1.8" class="cat-ink"/>
+                <path d="M13.9 4.3v15.4" class="cat-ink"/>
+                <path d="M6.6 8.1h5.6M6.6 11h5.6M6.6 13.9h3.9" class="cat-hatch"/>`
+        }
       };
+
+      // Ruled-ledger mark used when no single category is selected.
+      const LEDGER_ART = `<path d="M4.2 6.1h15.6M4.2 10.3h15.6M4.2 14.5h15.6M4.2 18.7h9.6" class="cat-ink"/>`;
+
+      /** Wrap raw illustration paths in an SVG canvas. */
+      function categoryArtwork(name) {
+        const category = CATEGORIES[name];
+        return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${category ? category.art : LEDGER_ART}</svg>`;
+      }
+
+      /**
+       * Build the badge shown next to a category in the ledger table.
+       * Returns an artisanal, hand-drawn vector mark instead of an emoji.
+       */
+      function getCategoryBadge(name, { size = 'md' } = {}) {
+        const category = CATEGORIES[name];
+        if (!category) return '';
+        const box = size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-10 w-10 rounded-xl';
+        return `<span class="category-icon grid ${box} shrink-0 place-items-center ring-1 ${category.color}" role="img" aria-label="${escapeHTML(name)}">${categoryArtwork(name)}</span>`;
+      }
+
+      /** Mirror the chosen category's illustration inside the select controls. */
+      function updateSelectMarks() {
+        if (elements.filterMark) elements.filterMark.innerHTML = categoryArtwork(elements.categoryFilter.value);
+        if (elements.categoryMark) elements.categoryMark.innerHTML = categoryArtwork(elements.expenseCategory.value);
+      }
 
       const $ = (selector) => document.querySelector(selector);
       const elements = {
@@ -369,6 +558,8 @@
         topCategory: $('#topCategory'),
         topCategoryCaption: $('#topCategoryCaption'),
         categoryFilter: $('#categoryFilter'),
+        filterMark: $('#filterMark'),
+        categoryMark: $('#categoryMark'),
         activeFilterLine: $('#activeFilterLine'),
         activeFilterText: $('#activeFilterText'),
         clearFilterButton: $('#clearFilterButton'),
@@ -630,7 +821,12 @@
         elements.entryCount.textContent = expenses.length.toLocaleString('en-IN');
         elements.monthTotal.textContent = money(totalOf(currentMonthExpenses));
         elements.monthCaption.textContent = currentMonthExpenses.length ? `${currentMonthExpenses.length} ${currentMonthExpenses.length === 1 ? 'expense' : 'expenses'} this month` : 'No activity this month';
-        elements.topCategory.textContent = categoryTotals.length ? `${CATEGORIES[categoryTotals[0].category].emoji} ${categoryTotals[0].category}` : '—';
+        if (categoryTotals.length) {
+          const leadingCategory = categoryTotals[0].category;
+          elements.topCategory.innerHTML = `<span class="flex items-center gap-2">${getCategoryBadge(leadingCategory, { size: 'sm' })}<span class="truncate">${escapeHTML(leadingCategory)}</span></span>`;
+        } else {
+          elements.topCategory.textContent = '—';
+        }
         elements.topCategoryCaption.textContent = categoryTotals.length ? `${money(categoryTotals[0].total)} spent in this category` : 'Add an expense to begin';
 
         const isFiltered = activeFilter !== 'All';
@@ -664,35 +860,35 @@
           let runningTotal = 0;
           elements.expenseRows.innerHTML = visibleExpenses.map((expense) => {
             runningTotal += expense.amount;
-            const category = CATEGORIES[expense.category];
             const safeTitle = escapeHTML(expense.title || 'No description');
-            const titleClass = expense.title ? 'text-slate-700' : 'italic text-slate-400';
+            const titleClass = expense.title ? 'text-[#4F4134]' : 'italic text-[#A4947C]';
             return `
-              <article class="expense-row grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 px-4 py-3.5 transition hover:bg-slate-50/80 sm:px-5" role="row">
+              <article class="expense-row grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 px-4 py-3.5 transition hover:bg-[#F3E8D5]/70 sm:px-5" role="row">
                 <div role="cell">
-                  <time datetime="${escapeHTML(expense.date)}" class="text-sm font-bold text-slate-700">${escapeHTML(expense.date)}</time>
+                  <time datetime="${escapeHTML(expense.date)}" class="text-sm font-bold text-[#4F4134]">${escapeHTML(expense.date)}</time>
                 </div>
                 <div class="flex min-w-0 items-center gap-3" role="cell">
-                  <span class="category-icon grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${category.color}" aria-hidden="true">${category.emoji}</span>
+                  ${getCategoryBadge(expense.category)}
                   <div class="min-w-0">
                     <p class="truncate text-sm font-extrabold text-ink">${escapeHTML(expense.category)}</p>
                     <p class="mt-0.5 truncate text-xs ${titleClass}">${safeTitle}</p>
                   </div>
                 </div>
                 <div class="text-right" role="cell">
-                  <span class="text-sm font-extrabold text-slate-800">${money(expense.amount)}</span>
+                  <span class="text-sm font-extrabold text-[#2A2A2A]">${money(expense.amount)}</span>
                 </div>
                 <div class="text-right" role="cell">
                   <span class="text-sm font-extrabold text-brand-700">${money(runningTotal)}</span>
                 </div>
                 <div class="justify-self-end" role="cell">
-                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-10 w-10 place-items-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
+                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-10 w-10 place-items-center rounded-xl text-[#A4947C] transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
                     <i data-lucide="trash-2" class="h-4 w-4" aria-hidden="true"></i>
                   </button>
                 </div>
               </article>`;
           }).join('');
         }
+        updateSelectMarks();
         refreshIcons();
       }
 
@@ -701,6 +897,7 @@
         elements.expenseForm.reset();
         elements.expenseDate.value = localDateISO();
         elements.expenseCategory.value = activeFilter !== 'All' ? activeFilter : 'Travel';
+        updateSelectMarks();
         elements.expenseModal.classList.remove('hidden');
         elements.expenseModal.classList.add('flex');
         document.body.style.overflow = 'hidden';
@@ -737,7 +934,7 @@
       function showToast(message, type = 'success') {
         const style = type === 'error'
           ? 'border-rose-100 bg-rose-50 text-rose-800'
-          : 'border-brand-100 bg-white text-slate-700';
+          : 'border-brand-100 bg-[#FDF5E6] text-[#4F4134]';
         const icon = type === 'error' ? 'circle-alert' : 'circle-check';
         const toast = document.createElement('div');
         toast.className = `toast-in flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold shadow-lg ${style}`;
@@ -875,6 +1072,7 @@
           activeFilter = event.target.value;
           render();
         });
+        elements.expenseCategory.addEventListener('change', updateSelectMarks);
         elements.expenseForm.addEventListener('submit', handleSubmit);
         elements.expenseRows.addEventListener('click', (event) => {
           const button = event.target.closest('[data-delete-id]');
@@ -907,6 +1105,7 @@
         });
         window.addEventListener('pagehide', () => saveExpenses(expenses));
 
+        updateSelectMarks();
         render();
         refreshIcons();
       }
