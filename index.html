@@ -342,7 +342,15 @@
     (() => {
       'use strict';
 
-      const STORAGE_KEY = 'expense-tracker-pro-expenses-v1';
+      // Universal Storage Engine: IndexedDB is primary, with localStorage kept
+      // as a synchronous fallback for restricted/private browser contexts.
+      const DB_NAME = 'ExpenseTrackerDB';
+      const DB_VERSION = 1;
+      const STORE_NAME = 'expenses';
+      const STORAGE_KEY = 'expenses_data';
+      const LEGACY_STORAGE_KEYS = ['expense-tracker-pro-expenses-v1'];
+      let db = null;
+
       const CATEGORIES = {
         'Travel': { emoji: '🚗', color: 'bg-sky-50 text-sky-700 ring-sky-100' },
         'Fuel': { emoji: '⛽', color: 'bg-amber-50 text-amber-700 ring-amber-100' },
@@ -391,7 +399,7 @@
         toastRegion: $('#toastRegion')
       };
 
-      let expenses = loadExpenses();
+      let expenses = [];
       let activeFilter = 'All';
       let pendingConfirmation = null;
       let lastFocusedElement = null;
@@ -404,33 +412,120 @@
         return new Date(date.getTime() - tzOffset).toISOString().slice(0, 10);
       }
 
-      function loadExpenses() {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-          if (!Array.isArray(parsed)) return [];
-          return parsed
-            .filter((item) => item && typeof item.date === 'string' && CATEGORIES[item.category] && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0)
-            .map((item) => ({
-              id: String(item.id || `${item.date}-${Math.random().toString(36).slice(2)}`),
-              date: item.date,
-              category: item.category,
-              title: typeof item.title === 'string' ? item.title.slice(0, 80) : '',
-              amount: Number(item.amount),
-              createdAt: Number(item.createdAt) || Date.now()
-            }));
-        } catch (error) {
-          console.warn('Could not read saved expenses.', error);
-          return [];
-        }
+      function normalizeExpenses(value) {
+        if (!Array.isArray(value)) return [];
+        return value
+          .filter((item) => item && typeof item.date === 'string' && CATEGORIES[item.category] && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0)
+          .map((item) => ({
+            id: String(item.id || `${item.date}-${Math.random().toString(36).slice(2)}`),
+            date: item.date,
+            category: item.category,
+            title: typeof item.title === 'string' ? item.title.slice(0, 80) : '',
+            amount: Number(item.amount),
+            createdAt: Number(item.createdAt) || Date.now()
+          }));
       }
 
-      function saveExpenses() {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-        } catch (error) {
-          showToast('Unable to save changes in this browser.', 'error');
-          console.warn('Could not save expenses.', error);
+      function readLocalExpenses() {
+        const merged = new Map();
+        for (const key of [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
+          try {
+            normalizeExpenses(JSON.parse(localStorage.getItem(key) || '[]'))
+              .forEach((item) => merged.set(item.id, item));
+          } catch (error) {
+            console.warn(`Could not read saved expenses from ${key}.`, error);
+          }
         }
+        return [...merged.values()];
+      }
+
+      function initDB() {
+        if (!('indexedDB' in window)) return Promise.resolve(null);
+        return new Promise((resolve) => {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (event) => {
+            const database = event.target.result;
+            if (!database.objectStoreNames.contains(STORE_NAME)) {
+              database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+          };
+          request.onsuccess = (event) => {
+            db = event.target.result;
+            db.onversionchange = () => {
+              db.close();
+              db = null;
+            };
+            resolve(db);
+          };
+          request.onerror = () => {
+            console.warn('IndexedDB unavailable; using localStorage.', request.error);
+            resolve(null);
+          };
+          request.onblocked = () => console.warn('IndexedDB upgrade is blocked by another app window.');
+        });
+      }
+
+      async function loadExpenses() {
+        const localExpenses = readLocalExpenses();
+        if (!db) {
+          await saveExpenses(localExpenses);
+          return expenses;
+        }
+
+        const storedExpenses = await new Promise((resolve) => {
+          try {
+            const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
+            request.onsuccess = () => resolve(normalizeExpenses(request.result));
+            request.onerror = () => {
+              console.warn('Could not read IndexedDB; using localStorage.', request.error);
+              resolve([]);
+            };
+          } catch (error) {
+            console.warn('Could not open an IndexedDB read transaction.', error);
+            resolve([]);
+          }
+        });
+
+        // Merge rather than only migrating when IndexedDB is empty. This preserves
+        // records created by an older desktop build or by a temporary IDB failure.
+        const merged = new Map(storedExpenses.map((item) => [item.id, item]));
+        localExpenses.forEach((item) => merged.set(item.id, item));
+        const data = [...merged.values()];
+        await saveExpenses(data);
+        return data;
+      }
+
+      function saveExpenses(data = expenses) {
+        const snapshot = normalizeExpenses(data);
+        expenses = snapshot;
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+          // Canonical storage now contains the merged data. Removing old keys
+          // prevents deleted legacy records from being re-imported next launch.
+          LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+        } catch (error) {
+          console.warn('Could not back up expenses to localStorage.', error);
+        }
+
+        if (!db) return Promise.resolve(false);
+        return new Promise((resolve) => {
+          try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            store.clear();
+            snapshot.forEach((item) => store.put(item));
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = () => {
+              console.warn('Could not save expenses to IndexedDB.', transaction.error);
+              resolve(false);
+            };
+            transaction.onabort = transaction.onerror;
+          } catch (error) {
+            console.warn('Could not open an IndexedDB write transaction.', error);
+            resolve(false);
+          }
+        });
       }
 
       function money(value) {
@@ -739,7 +834,9 @@
         });
       }
 
-      function initialize() {
+      async function initialize() {
+        await initDB();
+        expenses = await loadExpenses();
         elements.todayBadge.textContent = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date());
         window.addEventListener('beforeinstallprompt', (event) => {
           event.preventDefault();
@@ -805,11 +902,21 @@
             else if (!elements.expenseModal.classList.contains('hidden')) closeExpenseModal();
           }
         });
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') saveExpenses(expenses);
+        });
+        window.addEventListener('pagehide', () => saveExpenses(expenses));
+
         render();
         refreshIcons();
       }
 
-      initialize();
+      initialize().catch((error) => {
+        console.error('Application startup failed.', error);
+        expenses = readLocalExpenses();
+        render();
+        refreshIcons();
+      });
     })();
   </script>
 </body>
