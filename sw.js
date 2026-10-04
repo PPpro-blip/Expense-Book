@@ -1,5 +1,5 @@
 /* Expense Tracker Pro — static app shell only. User data is never requested or cached here. */
-const CACHE_NAME = 'expense-tracker-pro-v5';
+const CACHE_NAME = 'expense-tracker-pro-v6';
 const STATIC_ASSETS = [
   './',
   './index.html',

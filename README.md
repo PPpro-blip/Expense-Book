@@ -5,7 +5,9 @@ A polished, private expense tracker that now works as an installable **Progressi
 ## Highlights
 
 - Installable on Android, iPhone/iPad, tablets, and desktop as a standalone app
-- Offline-ready app shell with a service worker; saved expenses remain in browser `localStorage`
+- Offline-ready app shell with a service worker
+- Dual-layer storage: every save is written **synchronously to `localStorage`** (guaranteed to survive the OS killing the app on a swipe-quit) and immediately backed up to **IndexedDB**
+- Half-typed entries are auto-committed as you type and restored after a force-quit
 - PWA manifest, home-screen icons, theme color, and iOS web-app metadata
 - A vintage-artisanal visual theme: weathered teal, aged leather, twine and sepia paper
 - Add dated expenses in five categories: **Travel**, **Fuel**, **Food**, **Hotel**, and **Company Related**
@@ -42,7 +44,16 @@ Category marks are hand-drawn SVG outlines (compass, hand-pump fuel canister, cr
 
 ## PWA and offline behavior
 
-The app registers `sw.js` after the first page load. The service worker pre-caches the app shell, manifest, and app icons and runtime-caches UI resources, so subsequent visits can open the tracker without a connection. Expense records live only on the device in the local-storage key `expense-tracker-pro-expenses-v1`.
+The app registers `sw.js` after the first page load. The service worker pre-caches the app shell, manifest, and app icons and runtime-caches UI resources, so subsequent visits can open the tracker without a connection. Expense records live only on the device.
+
+### Storage engine (force-quit safe)
+
+Mobile operating systems can kill an installed PWA the instant it is swiped away, before asynchronous writes (IndexedDB transactions) finish. The storage engine is built around that:
+
+1. **Synchronous layer (`localStorage`, key `expense_tracker_master_data`)** — every mutation (add, delete, clear-all) is committed with a blocking write *first*, so the data already exists on disk before the process could possibly be terminated.
+2. **Asynchronous layer (IndexedDB `ExpenseTrackerDB_v2`)** — written immediately after as the permanent secondary store.
+3. **Startup merge** — the UI paints instantly from the synchronous layer, then merges IndexedDB (including migrations from the legacy `expenses_data` key and the legacy `ExpenseTrackerDB` database) so a record saved in either layer is never lost. Deletion tombstones (`expense_tracker_tombstones`) prevent records removed just before a kill from being resurrected by the slower layer.
+4. **Active-field flush** — every keystroke in the entry form is snapshotted synchronously (`expense_tracker_entry_draft`); a half-typed entry is restored the next time the form opens. Lifecycle events (`visibilitychange`, `freeze`, `pagehide`, `beforeunload`) trigger a synchronous flush as a final safety net.
 
 - **Chrome / Edge / Android:** use the in-app **Install app** control when it appears, or the browser’s install menu.
 - **iPhone / iPad:** open in Safari, choose **Share → Add to Home Screen**, then tap **Add**. The in-app install button shows these steps on iOS.

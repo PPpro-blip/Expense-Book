@@ -406,7 +406,7 @@
             <input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" required placeholder="0.00" class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-8 pr-3.5 text-base font-extrabold text-[#2A2A2A] placeholder:font-semibold placeholder:text-[#A4947C] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5 text-[#7C6C56]">Your expense data is stored privately in this browser.</p>
+        <p class="mt-3 text-xs leading-5 text-[#7C6C56]">Entries and drafts are saved instantly — everything stays private on this device.</p>
         <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button id="cancelModalButton" type="button" class="rounded-xl px-4 py-3 text-sm font-bold text-[#6B5B46] transition hover:bg-[#F0E2CB] focus:outline-none focus:ring-4 focus:ring-[#EADBC2]">Cancel</button>
           <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
@@ -455,13 +455,20 @@
     (() => {
       'use strict';
 
-      // Universal Storage Engine: IndexedDB is primary, with localStorage kept
-      // as a synchronous fallback for restricted/private browser contexts.
-      const DB_NAME = 'ExpenseTrackerDB';
+      // ── Dual-Layer Storage Engine with Instant Sync ──────────────────────
+      // Layer 1 (localStorage) receives a SYNCHRONOUS, blocking write on every
+      // mutation, guaranteed to complete before a mobile OS can terminate the
+      // PWA process on a swipe-quit. Layer 2 (IndexedDB) is the asynchronous
+      // permanent secondary store, written immediately after. At startup
+      // Layer 1 is read first for an instant paint, then merged with Layer 2.
+      const STORAGE_KEY = 'expense_tracker_master_data';
+      const DRAFT_KEY = 'expense_tracker_entry_draft';
+      const TOMBSTONE_KEY = 'expense_tracker_tombstones';
+      const LEGACY_STORAGE_KEYS = ['expenses_data', 'expense-tracker-pro-expenses-v1'];
+      const DB_NAME = 'ExpenseTrackerDB_v2';
       const DB_VERSION = 1;
       const STORE_NAME = 'expenses';
-      const STORAGE_KEY = 'expenses_data';
-      const LEGACY_STORAGE_KEYS = ['expense-tracker-pro-expenses-v1'];
+      const LEGACY_DB_NAME = 'ExpenseTrackerDB';
       let db = null;
 
       /* ── Hand-drawn, cross-hatched category marks ─────────────────────────
@@ -595,6 +602,7 @@
       let pendingConfirmation = null;
       let lastFocusedElement = null;
       let deferredInstallPrompt = null;
+      let draftRestoreToastShown = false;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -617,9 +625,10 @@
           }));
       }
 
+      /** Read every localStorage layer, legacy keys first so the canonical key wins. */
       function readLocalExpenses() {
         const merged = new Map();
-        for (const key of [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
+        for (const key of [...LEGACY_STORAGE_KEYS, STORAGE_KEY]) {
           try {
             normalizeExpenses(JSON.parse(localStorage.getItem(key) || '[]'))
               .forEach((item) => merged.set(item.id, item));
@@ -630,9 +639,25 @@
         return [...merged.values()];
       }
 
-      function initDB() {
-        if (!('indexedDB' in window)) return Promise.resolve(null);
-        return new Promise((resolve) => {
+      /**
+       * Layer 1 — synchronous, blocking write. This is the write that is
+       * guaranteed to finish before the OS can kill the PWA process.
+       */
+      function syncToLocalStorage(data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          // Canonical storage now contains the merged data. Removing old keys
+          // prevents deleted legacy records from being re-imported next launch.
+          LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+        } catch (error) {
+          console.error('LocalStorage write error:', error);
+        }
+      }
+
+      /** Layer 2 — open the asynchronous permanent store. */
+      function openIndexedDB() {
+        if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB is not supported.'));
+        return new Promise((resolve, reject) => {
           const request = indexedDB.open(DB_NAME, DB_VERSION);
           request.onupgradeneeded = (event) => {
             const database = event.target.result;
@@ -641,29 +666,24 @@
             }
           };
           request.onsuccess = (event) => {
-            db = event.target.result;
-            db.onversionchange = () => {
-              db.close();
-              db = null;
+            const database = event.target.result;
+            database.onversionchange = () => {
+              database.close();
+              if (db === database) db = null;
             };
-            resolve(db);
+            resolve(database);
           };
-          request.onerror = () => {
-            console.warn('IndexedDB unavailable; using localStorage.', request.error);
-            resolve(null);
-          };
+          request.onerror = () => reject(request.error);
           request.onblocked = () => console.warn('IndexedDB upgrade is blocked by another app window.');
         });
       }
 
-      async function loadExpenses() {
-        const localExpenses = readLocalExpenses();
-        if (!db) {
-          await saveExpenses(localExpenses);
-          return expenses;
-        }
-
-        const storedExpenses = await new Promise((resolve) => {
+      function readAllIndexedDB() {
+        return new Promise((resolve) => {
+          if (!db) {
+            resolve([]);
+            return;
+          }
           try {
             const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
             request.onsuccess = () => resolve(normalizeExpenses(request.result));
@@ -676,47 +696,219 @@
             resolve([]);
           }
         });
-
-        // Merge rather than only migrating when IndexedDB is empty. This preserves
-        // records created by an older desktop build or by a temporary IDB failure.
-        const merged = new Map(storedExpenses.map((item) => [item.id, item]));
-        localExpenses.forEach((item) => merged.set(item.id, item));
-        const data = [...merged.values()];
-        await saveExpenses(data);
-        return data;
       }
 
-      function saveExpenses(data = expenses) {
-        const snapshot = normalizeExpenses(data);
-        expenses = snapshot;
-
+      function writeAllIndexedDB(data) {
+        if (!db) return;
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-          // Canonical storage now contains the merged data. Removing old keys
-          // prevents deleted legacy records from being re-imported next launch.
-          LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+          const transaction = db.transaction(STORE_NAME, 'readwrite');
+          const store = transaction.objectStore(STORE_NAME);
+          // Clear first so deleted records never linger in the async layer.
+          store.clear().onsuccess = () => {
+            data.forEach((item) => store.put(item));
+          };
+          transaction.onerror = () => console.warn('Could not save expenses to IndexedDB.', transaction.error);
+          transaction.onabort = transaction.onerror;
         } catch (error) {
-          console.warn('Could not back up expenses to localStorage.', error);
+          console.warn('Could not open an IndexedDB write transaction.', error);
         }
+      }
 
-        if (!db) return Promise.resolve(false);
+      /**
+       * Read the pre-v2 database (from earlier builds) without ever creating
+       * it, so its records can be merged forward instead of being lost.
+       */
+      function readLegacyIndexedDB() {
         return new Promise((resolve) => {
-          try {
-            const transaction = db.transaction(STORE_NAME, 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            store.clear();
-            snapshot.forEach((item) => store.put(item));
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = () => {
-              console.warn('Could not save expenses to IndexedDB.', transaction.error);
-              resolve(false);
-            };
-            transaction.onabort = transaction.onerror;
-          } catch (error) {
-            console.warn('Could not open an IndexedDB write transaction.', error);
-            resolve(false);
+          if (!('indexedDB' in window)) {
+            resolve([]);
+            return;
           }
+          let settled = false;
+          const finish = (items, database) => {
+            if (settled) return;
+            settled = true;
+            if (database) database.close();
+            resolve(items);
+          };
+          let request;
+          try {
+            request = indexedDB.open(LEGACY_DB_NAME);
+          } catch (error) {
+            finish([]);
+            return;
+          }
+          // Opening a database that does not exist would CREATE an empty one —
+          // abort the upgrade instead so fresh installs stay clean.
+          request.onupgradeneeded = () => {
+            try {
+              request.transaction.abort();
+            } catch (abortError) { /* nothing to abort */ }
+            finish([]);
+          };
+          request.onerror = () => finish([]);
+          request.onblocked = () => finish([]);
+          request.onsuccess = (event) => {
+            const legacyDb = event.target.result;
+            if (!legacyDb.objectStoreNames.contains(STORE_NAME)) {
+              finish([], legacyDb);
+              return;
+            }
+            try {
+              const readRequest = legacyDb.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
+              readRequest.onsuccess = () => finish(normalizeExpenses(readRequest.result), legacyDb);
+              readRequest.onerror = () => finish([], legacyDb);
+            } catch (error) {
+              finish([], legacyDb);
+            }
+          };
         });
+      }
+
+      function deleteLegacyIndexedDB() {
+        if (!('indexedDB' in window)) return;
+        try {
+          indexedDB.deleteDatabase(LEGACY_DB_NAME);
+        } catch (error) { /* best-effort cleanup */ }
+      }
+
+      /**
+       * Master persist trigger — call SYNCHRONOUSLY on every state mutation.
+       * The localStorage write blocks until the bytes are committed, so the
+       * data is safe even if the process is killed a millisecond later.
+       */
+      function persistState() {
+        expenses = normalizeExpenses(expenses);
+        // 1. Synchronous write — guaranteed to execute before process termination.
+        syncToLocalStorage(expenses);
+        // 2. Asynchronous write — permanent secondary store.
+        writeAllIndexedDB(expenses);
+      }
+
+      // ── Active-field draft flush ───────────────────────────────────────────
+      // In-progress form input is auto-committed synchronously, so even a
+      // partially typed entry survives a swipe-quit.
+      function flushActiveDraft() {
+        if (!elements.expenseForm) return;
+        try {
+          const title = elements.expenseTitle.value;
+          const amount = String(elements.expenseAmount.value);
+          if (!title.trim() && !amount.trim()) {
+            localStorage.removeItem(DRAFT_KEY);
+            return;
+          }
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            date: elements.expenseDate.value,
+            category: elements.expenseCategory.value,
+            title: title.slice(0, 80),
+            amount,
+            savedAt: Date.now()
+          }));
+        } catch (error) {
+          console.error('Draft write error:', error);
+        }
+      }
+
+      function readActiveDraft() {
+        try {
+          const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+          if (draft && typeof draft === 'object') return draft;
+        } catch (error) {
+          console.warn('Could not read the saved entry draft.', error);
+        }
+        return null;
+      }
+
+      function clearActiveDraft() {
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch (error) { /* storage unavailable */ }
+      }
+
+      // ── Deletion tombstones ──────────────────────────────────────────────
+      // A delete is committed to localStorage synchronously, but the matching
+      // IndexedDB rewrite is asynchronous. If the process dies in between, the
+      // async layer still holds the record — a tombstone (also written
+      // synchronously) stops the boot-time merge from resurrecting it.
+      function readTombstones() {
+        try {
+          const value = JSON.parse(localStorage.getItem(TOMBSTONE_KEY) || '[]');
+          return Array.isArray(value) ? value.map(String) : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function rememberTombstones(ids) {
+        if (!ids.length) return;
+        try {
+          const merged = [...new Set([...readTombstones(), ...ids.map(String)])].slice(-500);
+          localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(merged));
+        } catch (error) {
+          console.error('Tombstone write error:', error);
+        }
+      }
+
+      function writeTombstones(ids) {
+        try {
+          localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(ids));
+        } catch (error) { /* storage unavailable */ }
+      }
+
+      /** Synchronously flush everything a force-quit could destroy. */
+      function flushAllState() {
+        flushActiveDraft();
+        persistState();
+      }
+
+      /**
+       * Initialize the storage engine: paint synchronously from localStorage
+       * for an instant UI, then open IndexedDB and merge every layer forward
+       * so no record from any store — current or legacy — is ever lost.
+       */
+      async function initStorageEngine() {
+        // 1. Synchronous load from localStorage for an instant UI paint.
+        expenses = readLocalExpenses();
+        render();
+
+        // 2. Initialize IndexedDB as the secondary store and merge.
+        try {
+          db = await openIndexedDB();
+          const [idbData, legacyIdbData] = await Promise.all([readAllIndexedDB(), readLegacyIndexedDB()]);
+
+          const merged = new Map();
+          idbData.forEach((item) => merged.set(item.id, item));
+          legacyIdbData.forEach((item) => merged.set(item.id, item));
+          // The synchronous layer was written most recently — it wins ties.
+          expenses.forEach((item) => merged.set(item.id, item));
+          const union = [...merged.values()];
+
+          // Apply tombstones: records deleted just before a kill may still
+          // linger in the asynchronous layer — never bring them back.
+          const tombstoned = new Set(readTombstones());
+          const data = union.filter((item) => !tombstoned.has(item.id));
+
+          // Prune tombstones that no longer suppress anything; once both
+          // layers are rewritten clean, the tombstone has done its job.
+          const stillNeeded = union.filter((item) => tombstoned.has(item.id)).map((item) => item.id);
+          if (stillNeeded.length !== tombstoned.size) writeTombstones(stillNeeded);
+
+          // If either asynchronous store held records localStorage did not
+          // (e.g. the last session was killed mid-write), restore them.
+          if (data.length !== expenses.length || data.some((item) => !expenses.some((existing) => existing.id === item.id))) {
+            expenses = data;
+            render();
+          }
+
+          // Push the merged snapshot back down into both layers.
+          persistState();
+
+          // Legacy records are safely merged — drop the old database so
+          // records deleted later are never resurrected from it.
+          if (legacyIdbData.length) deleteLegacyIndexedDB();
+        } catch (error) {
+          console.warn('IndexedDB fallback active:', error);
+        }
       }
 
       function money(value) {
@@ -897,6 +1089,21 @@
         elements.expenseForm.reset();
         elements.expenseDate.value = localDateISO();
         elements.expenseCategory.value = activeFilter !== 'All' ? activeFilter : 'Travel';
+        // Restore any unsaved entry that survived a forced termination.
+        const draft = readActiveDraft();
+        if (draft) {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(draft.date || '')) elements.expenseDate.value = draft.date;
+          if (CATEGORIES[draft.category]) elements.expenseCategory.value = draft.category;
+          if (typeof draft.title === 'string') elements.expenseTitle.value = draft.title.slice(0, 80);
+          const draftAmount = Number(draft.amount);
+          if (draft.amount !== '' && Number.isFinite(draftAmount) && draftAmount > 0) {
+            elements.expenseAmount.value = String(draft.amount);
+          }
+          if (!draftRestoreToastShown) {
+            draftRestoreToastShown = true;
+            showToast('Unsaved entry restored after the app closed.');
+          }
+        }
         updateSelectMarks();
         elements.expenseModal.classList.remove('hidden');
         elements.expenseModal.classList.add('flex');
@@ -909,6 +1116,13 @@
         elements.expenseModal.classList.remove('flex');
         document.body.style.overflow = '';
         if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+      }
+
+      /** Explicit discard (✕ / Cancel buttons): drop the draft, then close. */
+      function discardExpenseEntry() {
+        clearActiveDraft();
+        elements.expenseForm.reset();
+        closeExpenseModal();
       }
 
       function openConfirmation({ title, description, actionLabel, action }) {
@@ -994,7 +1208,14 @@
           amount: Math.round(amount * 100) / 100,
           createdAt: Date.now()
         });
-        saveExpenses();
+        // Persist INSTANTLY: the synchronous localStorage write inside
+        // persistState() is complete before anything else runs — even if the
+        // user swipes the app away at this exact moment, the record survives.
+        persistState();
+        // The entry is safely stored. Drop the draft and reset the form so it
+        // is not mistaken for an unsaved entry by a later auto-flush.
+        clearActiveDraft();
+        elements.expenseForm.reset();
         closeExpenseModal();
         render();
         showToast('Expense added successfully.');
@@ -1009,7 +1230,10 @@
           actionLabel: 'Remove',
           action: () => {
             expenses = expenses.filter((item) => item.id !== id);
-            saveExpenses();
+            // Tombstone first (synchronous) so a kill before the async layer
+            // catches up cannot resurrect the record on the next launch.
+            rememberTombstones([id]);
+            persistState();
             render();
             showToast('Expense removed.');
           }
@@ -1023,8 +1247,9 @@
           description: `This will permanently remove all ${expenses.length} recorded ${expenses.length === 1 ? 'expense' : 'expenses'} from this browser.`,
           actionLabel: 'Clear all',
           action: () => {
+            rememberTombstones(expenses.map((item) => item.id));
             expenses = [];
-            saveExpenses();
+            persistState();
             render();
             showToast('All expenses cleared.');
           }
@@ -1032,8 +1257,6 @@
       }
 
       async function initialize() {
-        await initDB();
-        expenses = await loadExpenses();
         elements.todayBadge.textContent = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date());
         window.addEventListener('beforeinstallprompt', (event) => {
           event.preventDefault();
@@ -1059,8 +1282,8 @@
         $('#addExpenseButton').addEventListener('click', openExpenseModal);
         $('#bottomAddButton').addEventListener('click', openExpenseModal);
         $('#emptyAddButton').addEventListener('click', openExpenseModal);
-        $('#closeModalButton').addEventListener('click', closeExpenseModal);
-        $('#cancelModalButton').addEventListener('click', closeExpenseModal);
+        $('#closeModalButton').addEventListener('click', discardExpenseEntry);
+        $('#cancelModalButton').addEventListener('click', discardExpenseEntry);
         $('#exportButton').addEventListener('click', exportCSV);
         $('#clearAllButton').addEventListener('click', clearAllExpenses);
         elements.clearFilterButton.addEventListener('click', () => {
@@ -1100,10 +1323,25 @@
             else if (!elements.expenseModal.classList.contains('hidden')) closeExpenseModal();
           }
         });
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'hidden') saveExpenses(expenses);
-        });
-        window.addEventListener('pagehide', () => saveExpenses(expenses));
+        // Immediate active-field flush — every keystroke or selection change in
+        // the entry form is snapshotted synchronously, so even a half-typed
+        // entry survives a forced termination.
+        elements.expenseForm.addEventListener('input', flushActiveDraft, { capture: true });
+        elements.expenseForm.addEventListener('change', flushActiveDraft, { capture: true });
+
+        // Mobile lifecycle auto-flushes. Standard lifecycle triggers are
+        // unreliable on mobile WebKit/Chromium when the app is killed from the
+        // recents screen, so every termination signal forces a synchronous
+        // flush with capture enabled.
+        window.addEventListener('visibilitychange', flushAllState, { capture: true });
+        document.addEventListener('visibilitychange', flushAllState, { capture: true });
+        window.addEventListener('freeze', flushAllState, { capture: true });
+        window.addEventListener('pagehide', flushAllState, { capture: true });
+        window.addEventListener('beforeunload', flushAllState, { capture: true });
+
+        // Start the dual-layer storage engine: instant synchronous paint from
+        // localStorage, then the IndexedDB merge (render() runs inside it).
+        await initStorageEngine();
 
         updateSelectMarks();
         render();
