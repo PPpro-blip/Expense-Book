@@ -1,15 +1,15 @@
 {
-  "name": "Expense Tracker Pro",
-  "short_name": "Expenses",
-  "description": "A private, offline-ready expense tracker for everyday spending.",
+  "name": "Expense Tracker Pro - Family & Household Finance",
+  "short_name": "ExpensePro",
+  "description": "A private, offline-ready expense tracker and financial analytics app for personal and household spending.",
   "lang": "en-IN",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#FAF0E6",
-  "theme_color": "#1D7373",
+  "background_color": "#0d9488",
+  "theme_color": "#0d9488",
   "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
@@ -38,12 +38,6 @@
     },
     {
       "src": "assets/master-asset.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/PPpro-blip/Expense-Book/main/assets/master-asset.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"

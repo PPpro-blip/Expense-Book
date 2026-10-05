@@ -1,1360 +1,1338 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1D7373">
-  <meta name="description" content="Expense Tracker Pro — a private, offline-ready way to track every expense in Indian Rupees.">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Expenses">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/master-asset.svg" type="image/svg+xml">
-  <link rel="icon" href="assets/icon-192.png" sizes="192x192" type="image/png">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <title>Expense Tracker Pro</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Expense Tracker Pro - Family & Household Finance</title>
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0d9488" />
+  <meta name="description" content="Play Store-ready personal & family expense management app with live analytics, dual-layer instant storage, and offline PWA support." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ExpensePro" />
 
+  <!-- App Icons -->
+  <link rel="icon" href="assets/master-asset.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <!-- Tailwind, Lucide Icons, Chart.js -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            /* Artisanal palette — faded ink, weathered teal, aged leather, sepia paper */
-            ink: '#2A2A2A',
-            brand: {
-              50: '#E9F2F0',
-              100: '#CFE3E0',
-              200: '#A9CCC8',
-              500: '#258E8E',
-              600: '#1D7373',
-              700: '#155959',
-              800: '#0F4444',
-              900: '#0A3030'
-            },
-            leather: {
-              50: '#F7EDE0',
-              100: '#EFDCC4',
-              200: '#E3CDA4',
-              500: '#A6612F',
-              600: '#8C5024',
-              700: '#6F3F1C'
-            },
-            sepia: {
-              50: '#FDF5E6',
-              100: '#FAF0E6',
-              200: '#F3E8D5',
-              300: '#E3D3B8',
-              400: '#C8B494'
-            },
-            twine: '#C8A77A'
-          },
-          fontFamily: {
-            display: ['"Georgia"', 'ui-serif', 'Cambria', '"Times New Roman"', 'serif']
-          },
-          boxShadow: {
-            app: '0 24px 70px rgba(42, 42, 42, 0.16)',
-            float: '0 14px 30px rgba(29, 115, 115, 0.28)',
-            leather: '0 10px 24px rgba(111, 63, 28, 0.22)'
-          }
-        }
-      }
-    };
-  </script>
-  <link rel="preconnect" href="https://cdn.tailwindcss.com">
-  <link rel="preconnect" href="https://unpkg.com">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <style>
-    /* ── Artisanal theme tokens ─────────────────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
     :root {
-      color-scheme: light;
-      --teal: #1D7373;          /* Primary — weathered teal */
-      --teal-light: #258E8E;
-      --teal-dark: #155959;
-      --teal-ink: #0F4444;
-      --leather: #A6612F;       /* Secondary — aged leather */
-      --leather-dark: #6F3F1C;
-      --leather-soft: #E3CDA4;
-      --sepia: #FDF5E6;         /* Accent — off-white sepia card stock */
-      --paper: #FAF0E6;         /* Weathered paper page */
-      --paper-edge: #E3D3B8;
-      --twine: #C8A77A;
-      --ink: #2A2A2A;           /* Faded ink black */
-      --ink-soft: #7C6C56;
-      /* Hand-made paper grain, drawn once and reused everywhere */
-      --grain:
-        radial-gradient(circle at 18% 22%, rgba(166, 97, 47, .055) 0 2px, transparent 3px),
-        radial-gradient(circle at 72% 64%, rgba(42, 42, 42, .045) 0 1.5px, transparent 3px),
-        radial-gradient(circle at 44% 86%, rgba(166, 97, 47, .05) 0 2px, transparent 3px),
-        radial-gradient(circle at 88% 12%, rgba(42, 42, 42, .035) 0 1.5px, transparent 3px);
-    }
-    * { -webkit-tap-highlight-color: transparent; }
-    html { background: var(--paper); }
-    body {
-      min-height: 100vh;
-      margin: 0;
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      /* Very subtle weathered-paper texture over #FAF0E6 */
-      background-color: var(--paper);
-      background-image:
-        radial-gradient(circle at 0% 0%, rgba(29, 115, 115, .10), transparent 28rem),
-        radial-gradient(circle at 100% 12%, rgba(166, 97, 47, .10), transparent 26rem),
-        radial-gradient(circle at 62% 100%, rgba(200, 167, 122, .14), transparent 30rem),
-        repeating-linear-gradient(103deg, rgba(166, 97, 47, .030) 0 1px, transparent 1px 7px),
-        repeating-linear-gradient(13deg, rgba(42, 42, 42, .022) 0 1px, transparent 1px 9px),
-        var(--grain);
-      background-attachment: fixed;
-    }
-    button, input, select { font: inherit; }
-    button { -webkit-user-select: none; user-select: none; }
-    .app-shell { min-height: 100vh; }
-    .app-frame { min-height: 100vh; }
-    .mesh-dot { background-image: radial-gradient(rgba(166, 97, 47, .16) 1px, transparent 1px); background-size: 18px 18px; }
-
-    /* ── Weathered teal masthead with an aged paper overlay ─────────────── */
-    .masthead {
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
-      border: 1px solid rgba(15, 68, 68, .55);
-      border-radius: 1.25rem;
-      background-color: var(--teal);
-      background-image: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 48%, var(--teal-dark) 100%);
-      box-shadow: 0 16px 34px rgba(15, 68, 68, .26), inset 0 1px 0 rgba(253, 245, 230, .18);
-    }
-    .masthead::before {
-      /* aged paper overlay — fibres, foxing specks and a weathered wash */
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      opacity: .85;
-      background-image:
-        radial-gradient(ellipse at 12% 0%, rgba(253, 245, 230, .20), transparent 60%),
-        radial-gradient(ellipse at 92% 120%, rgba(253, 245, 230, .14), transparent 55%),
-        repeating-linear-gradient(97deg, rgba(253, 245, 230, .07) 0 1px, transparent 1px 6px),
-        repeating-linear-gradient(7deg, rgba(10, 48, 48, .10) 0 1px, transparent 1px 8px),
-        radial-gradient(circle at 26% 68%, rgba(200, 167, 122, .16) 0 3px, transparent 4px),
-        radial-gradient(circle at 78% 26%, rgba(200, 167, 122, .14) 0 2px, transparent 3px);
-      mix-blend-mode: soft-light;
-    }
-    .masthead::after {
-      /* worn edge vignette */
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background: radial-gradient(120% 90% at 50% 35%, transparent 52%, rgba(6, 48, 47, .42) 100%);
-      pointer-events: none;
-    }
-    .masthead-logo {
-      display: block;
-      border-radius: 1rem;
-      box-shadow: 0 10px 22px rgba(10, 48, 48, .38), 0 0 0 1px rgba(253, 245, 230, .32);
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
     }
 
-    /* ── Sepia card stock ───────────────────────────────────────────────── */
-    .card-stock {
-      background-color: var(--sepia);
-      background-image: var(--grain);
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
-    .rule-stitch { border-top: 1px dashed rgba(166, 97, 47, .38); }
 
-    /* ── Hand-drawn category marks ──────────────────────────────────────── */
-    .category-icon { transition: transform .18s ease, box-shadow .18s ease; }
-    .category-icon svg { width: 1.375rem; height: 1.375rem; }
-    .expense-row:hover .category-icon { transform: scale(1.08) rotate(-3deg); }
-    .cat-ink { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .cat-hatch { fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; opacity: .62; }
-    .cat-fill { fill: currentColor; opacity: .18; stroke: none; }
-    .cat-dot { fill: currentColor; stroke: none; }
-    .select-mark { color: var(--leather); }
-    .select-mark svg { width: 1.25rem; height: 1.25rem; }
-    .modal-enter { animation: modal-in .2s ease-out; }
-    @keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    @keyframes toast-in { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .toast-in { animation: toast-in .24s ease-out; }
-    .hide-scrollbar { scrollbar-width: none; }
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .table-scroll {
+    body { 
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .table-responsive {
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-x: contain;
-      scrollbar-color: var(--twine) transparent;
-      scrollbar-width: thin;
     }
-    .table-scroll:focus-visible { outline: 3px solid rgba(29, 115, 115, .38); outline-offset: -3px; }
-    input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
-    @supports (padding: max(0px)) {
-      .safe-bottom { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    @media (max-width: 639px) {
-      .expense-row { min-height: 72px; }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
     }
-    @media (min-width: 768px) {
-      .app-shell { padding: 32px; }
-      .app-frame { min-height: calc(100vh - 64px); }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Modal Animation */
+    .modal-enter {
+      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Toast Animation */
+    .toast-anim {
+      animation: toastSlideUp 0.25s ease-out forwards;
+    }
+    @keyframes toastSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-<body>
-  <main class="app-shell mx-auto max-w-7xl">
-    <section class="app-frame relative overflow-hidden bg-[#FAF0E6] md:rounded-[2rem] md:border md:border-[#EADBC2] md:shadow-app">
-      <div class="pointer-events-none absolute inset-0 mesh-dot opacity-30"></div>
+<body class="min-h-screen pb-24 md:pb-12 text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
 
-      <div class="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-44 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-9">
-        <header class="masthead flex items-start justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5">
-          <div class="flex min-w-0 items-center gap-3 sm:gap-4">
-            <img src="assets/master-asset.svg" alt="" width="56" height="56" class="masthead-logo h-12 w-12 shrink-0 sm:h-14 sm:w-14" aria-hidden="true">
-            <div class="min-w-0">
-              <p class="mb-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFE3E0]">Personal finance ledger</p>
-              <h1 class="truncate text-xl font-extrabold tracking-tight text-[#FDF5E6] sm:text-2xl">Expense Tracker Pro</h1>
-            </div>
-          </div>
-          <div class="flex shrink-0 items-center gap-2">
-            <button id="installAppButton" type="button" class="hidden h-10 items-center justify-center gap-2 rounded-xl border border-[#FDF5E6]/35 bg-[#FDF5E6]/15 px-3 text-xs font-extrabold text-[#FDF5E6] shadow-sm backdrop-blur-sm transition hover:bg-[#FDF5E6]/25 focus:outline-none focus:ring-4 focus:ring-[#FDF5E6]/25" aria-label="Install Expense Tracker Pro">
-              <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
-              <span class="hidden sm:inline">Install app</span>
-            </button>
-            <div class="hidden shrink-0 items-center gap-2 rounded-xl border border-[#FDF5E6]/30 bg-[#FDF5E6]/12 px-3 py-2 text-xs font-semibold text-[#FDF5E6] shadow-sm sm:flex">
-              <i data-lucide="calendar-days" class="h-4 w-4 text-[#E3CDA4]" aria-hidden="true"></i>
-              <span id="todayBadge">Today</span>
-            </div>
-          </div>
-        </header>
+  <!-- Main Container -->
+  <div class="max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
 
-        <section aria-label="Expense overview" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-7 lg:grid-cols-4">
-          <article class="masthead p-4 text-[#FDF5E6] sm:p-5">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-[#FDF5E6]/80">Grand total</p>
-              <i data-lucide="indian-rupee" class="h-4 w-4 text-[#E3CDA4]" aria-hidden="true"></i>
-            </div>
-            <p id="heroTotal" class="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">₹0.00</p>
-            <p class="mt-1 text-xs text-[#FDF5E6]/75">All recorded expenses</p>
-          </article>
-          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">Entries</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#E0EDEA] text-[#1D7373]"><i data-lucide="receipt-text" class="h-4 w-4" aria-hidden="true"></i></span>
-            </div>
-            <p id="entryCount" class="mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">0</p>
-            <p class="mt-1 text-xs text-[#7C6C56]">Expenses logged</p>
-          </article>
-          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">This month</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#F7E8D6] text-[#A6612F]"><i data-lucide="calendar-range" class="h-4 w-4" aria-hidden="true"></i></span>
-            </div>
-            <p id="monthTotal" class="mt-2 text-3xl font-extrabold tracking-tight text-ink">₹0.00</p>
-            <p id="monthCaption" class="mt-1 text-xs text-[#7C6C56]">No activity yet</p>
-          </article>
-          <article class="card-stock rounded-2xl border border-[#E3D3B8] p-4 shadow-sm sm:p-5">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold uppercase tracking-wider text-[#7C6C56]">Top category</p>
-              <span class="grid h-8 w-8 place-items-center rounded-xl bg-[#EFE6DA] text-[#5B4636]"><i data-lucide="chart-no-axes-combined" class="h-4 w-4" aria-hidden="true"></i></span>
-            </div>
-            <p id="topCategory" class="mt-2 truncate text-xl font-extrabold tracking-tight text-ink">—</p>
-            <p id="topCategoryCaption" class="mt-1 text-xs text-[#7C6C56]">Add an expense to begin</p>
-          </article>
-        </section>
-
-        <section class="card-stock mt-5 rounded-2xl border border-[#E3D3B8] p-3 shadow-sm sm:mt-6 sm:p-4" aria-label="Expense actions">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div class="grid grid-cols-2 gap-2 sm:flex">
-              <button id="addExpenseButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
-                <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
-                Add Expense
-              </button>
-              <button id="exportButton" type="button" class="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E3D3B8] bg-[#FDF5E6] px-4 py-3 text-sm font-bold text-[#4F4134] transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
-                <i data-lucide="download" class="h-4 w-4" aria-hidden="true"></i>
-                Export CSV
-              </button>
-            </div>
-            <div class="flex items-center gap-2">
-              <label for="categoryFilter" class="sr-only">Filter expenses by category</label>
-              <span class="hidden text-xs font-bold uppercase tracking-wider text-[#7C6C56] sm:inline">Filter by category</span>
-              <div class="relative flex-1 sm:w-56 sm:flex-none">
-                <span id="filterMark" class="select-mark pointer-events-none absolute left-3 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center" aria-hidden="true"></span>
-                <select id="categoryFilter" class="w-full appearance-none rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-11 pr-10 text-sm font-bold text-[#4F4134] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
-                  <option value="All">All categories</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Fuel">Fuel</option>
-                  <option value="Food">Food</option>
-                  <option value="Hotel">Hotel</option>
-                  <option value="Company Related">Company Related</option>
-                </select>
-                <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7C6C56]" aria-hidden="true"></i>
-              </div>
-            </div>
-          </div>
-          <div id="activeFilterLine" class="rule-stitch mt-3 hidden items-center gap-2 pt-3 text-xs font-semibold text-brand-700">
-            <i data-lucide="funnel" class="h-3.5 w-3.5" aria-hidden="true"></i>
-            <span id="activeFilterText"></span>
-            <button id="clearFilterButton" type="button" class="ml-auto underline decoration-brand-300 underline-offset-2 transition hover:text-brand-900">Clear filter</button>
-          </div>
-        </section>
-
-        <section class="card-stock mt-5 overflow-hidden rounded-2xl border border-[#E3D3B8] shadow-sm sm:mt-6" aria-labelledby="expenseListTitle">
-          <div class="flex items-center justify-between gap-3 border-b border-[#EEE1CB] px-4 py-4 sm:px-5">
-            <div>
-              <h2 id="expenseListTitle" class="text-base font-extrabold text-ink">Expense history</h2>
-              <p id="listSubtitle" class="mt-0.5 text-xs text-[#7C6C56]">Your expenses will appear here.</p>
-            </div>
-            <button id="clearAllButton" type="button" class="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Clear all expenses">
-              <i data-lucide="trash-2" class="h-3.5 w-3.5" aria-hidden="true"></i>
-              Clear all
-            </button>
-          </div>
-
-          <p id="tableScrollHint" class="border-b border-[#EEE1CB] px-4 pb-2 text-[11px] font-semibold text-[#A4947C] sm:hidden">Swipe the table horizontally to view every column.</p>
-
-          <div id="emptyState" class="px-5 py-14 text-center sm:py-16">
-            <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-brand-50 text-brand-600">
-              <i data-lucide="receipt" class="h-8 w-8" aria-hidden="true"></i>
-            </div>
-            <h3 id="emptyTitle" class="mt-4 text-lg font-extrabold text-ink">No expenses yet</h3>
-            <p id="emptyDescription" class="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#7C6C56]">Keep a clear record of your spending. Add your first expense to get started.</p>
-            <button id="emptyAddButton" type="button" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">
-              <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
-              Add first expense
-            </button>
-          </div>
-
-          <div id="tableContainer" class="hidden">
-            <div class="table-scroll overflow-x-auto" tabindex="0" aria-label="Expense history table. Swipe horizontally to view all columns.">
-              <div class="min-w-[640px]">
-                <div class="grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 bg-[#F6EBD8] px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-[#7C6C56] sm:px-5">
-                  <span>Date</span>
-                  <span>Expenses (Category)</span>
-                  <span class="text-right">Price</span>
-                  <span class="text-right">Sum</span>
-                  <span class="sr-only">Actions</span>
-                </div>
-                <div id="expenseRows" class="divide-y divide-[#EEE1CB]"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+    <!-- App Header -->
+    <header class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-teal-600 text-white p-3 rounded-2xl shadow-md shadow-teal-600/20 flex items-center justify-center">
+          <i data-lucide="wallet" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-[10px] font-extrabold tracking-widest text-teal-600 uppercase">Family & Household Finance</span>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Expense Tracker Pro</h1>
+        </div>
       </div>
 
-      <footer id="totalBar" class="safe-bottom fixed bottom-0 left-0 right-0 z-20 border-t border-brand-100 bg-[#FDF5E6]/95 px-4 py-3 shadow-[0_-8px_26px_rgba(42,42,42,.12)] backdrop-blur-xl md:absolute md:rounded-b-[2rem] md:px-8 lg:px-12">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-3">
-            <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-              <i data-lucide="sigma" class="h-5 w-5" aria-hidden="true"></i>
-            </div>
-            <div class="min-w-0">
-              <p id="summaryLabel" class="truncate text-xs font-semibold text-[#7C6C56]">Grand total · 0 entries</p>
-              <p id="summaryTotal" class="text-lg font-extrabold tracking-tight text-ink">₹0.00</p>
-            </div>
-          </div>
-          <div id="filterSummary" class="hidden shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-right">
-            <p class="text-[10px] font-bold uppercase tracking-wide text-brand-600">Filtered total</p>
-            <p id="filterTotal" class="text-sm font-extrabold text-brand-700">₹0.00</p>
-          </div>
-          <button id="bottomAddButton" type="button" class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-600 px-3.5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98] sm:px-4">
-            <i data-lucide="plus" class="h-4 w-4" aria-hidden="true"></i>
-            <span class="hidden sm:inline">Add expense</span>
-            <span class="sm:hidden">Add</span>
-          </button>
-        </div>
-      </footer>
-    </section>
-  </main>
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        <span id="currentDateBadge" class="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-200/60 shadow-xs">
+          <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
+          <span></span>
+        </span>
 
-  <div id="expenseModal" class="fixed inset-0 z-40 hidden items-end bg-[#2A2A2A]/45 p-0 backdrop-blur-[2px] sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-enter w-full max-w-lg rounded-t-[2rem] bg-[#FDF5E6] shadow-2xl sm:rounded-[2rem]">
-      <div class="flex items-center justify-between border-b border-[#EEE1CB] px-5 py-4 sm:px-6 sm:py-5">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-[.15em] text-brand-600">New record</p>
-          <h2 id="modalTitle" class="mt-0.5 text-xl font-extrabold text-ink">Add an expense</h2>
-        </div>
-        <button id="closeModalButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-[#7C6C56] transition hover:bg-[#F0E2CB] hover:text-[#2A2A2A] focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close add expense form">
-          <i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i>
+        <button id="pwaInstallBtn" onclick="installPWA()" class="hidden bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm cursor-pointer">
+          <i data-lucide="download-cloud" class="w-4 h-4"></i> Install App
+        </button>
+
+        <button onclick="confirmClearAll()" title="Reset / Clear all data" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
       </div>
-      <form id="expenseForm" class="px-5 py-5 sm:px-6 sm:py-6">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="block">
-            <span class="mb-2 block text-sm font-bold text-[#4F4134]">Date <span class="text-rose-500">*</span></span>
-            <input id="expenseDate" name="date" type="date" required class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] px-3.5 py-3 text-sm font-semibold text-[#2A2A2A] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
-          </label>
-          <label class="block">
-            <span class="mb-2 block text-sm font-bold text-[#4F4134]">Category <span class="text-rose-500">*</span></span>
-            <span class="relative block">
-              <span id="categoryMark" class="select-mark pointer-events-none absolute left-3.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center" aria-hidden="true"></span>
-              <select id="expenseCategory" name="category" required class="block w-full appearance-none rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-11 pr-10 text-sm font-semibold text-[#2A2A2A] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
-                <option value="Travel">Travel</option>
-                <option value="Fuel">Fuel</option>
-                <option value="Food">Food</option>
-                <option value="Hotel">Hotel</option>
-                <option value="Company Related">Company Related</option>
-              </select>
-              <i data-lucide="chevron-down" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7C6C56]" aria-hidden="true"></i>
-            </span>
-          </label>
+    </header>
+
+    <!-- Top Summary Metrics Cards (4-Card Grid) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <!-- Grand Total -->
+      <div class="bg-gradient-to-br from-teal-700 to-teal-800 text-white p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[11px] font-bold tracking-wider uppercase opacity-85">Grand Total</span>
+          <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full text-white">INR</span>
         </div>
-        <label class="mt-4 block">
-          <span class="mb-2 block text-sm font-bold text-[#4F4134]">Description / title <span class="font-medium text-[#A4947C]">(optional)</span></span>
-          <input id="expenseTitle" name="title" type="text" maxlength="80" placeholder="e.g. Airport taxi, team lunch" autocomplete="off" class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] px-3.5 py-3 text-sm font-semibold text-[#2A2A2A] placeholder:font-medium placeholder:text-[#A4947C] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
-        </label>
-        <div class="mt-4">
-          <label for="expenseAmount" class="mb-2 block text-sm font-bold text-[#4F4134]">Amount <span class="text-rose-500">*</span></label>
-          <div class="relative">
-            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-brand-600">₹</span>
-            <input id="expenseAmount" name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" required placeholder="0.00" class="block w-full rounded-xl border border-[#E3D3B8] bg-[#F6EBD8] py-3 pl-8 pr-3.5 text-base font-extrabold text-[#2A2A2A] placeholder:font-semibold placeholder:text-[#A4947C] outline-none transition focus:border-brand-500 focus:bg-[#FDF5E6] focus:ring-4 focus:ring-brand-100">
+        <div>
+          <p id="statGrandTotal" class="text-2xl sm:text-3xl font-extrabold tracking-tight">₹0.00</p>
+          <p class="text-[10px] text-teal-100 font-medium mt-0.5">All-time tracked spend</p>
+        </div>
+      </div>
+
+      <!-- Total Entries -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Entries</span>
+          <div class="p-1.5 bg-slate-100 text-slate-600 rounded-lg">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5 text-[#7C6C56]">Entries and drafts are saved instantly — everything stays private on this device.</p>
-        <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button id="cancelModalButton" type="button" class="rounded-xl px-4 py-3 text-sm font-bold text-[#6B5B46] transition hover:bg-[#F0E2CB] focus:outline-none focus:ring-4 focus:ring-[#EADBC2]">Cancel</button>
-          <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[.98]">
-            <i data-lucide="circle-check" class="h-4 w-4" aria-hidden="true"></i>
-            Save expense
+        <div>
+          <p id="statEntries" class="text-2xl sm:text-3xl font-extrabold text-slate-800">0</p>
+          <p class="text-[10px] text-slate-400 font-medium mt-0.5">Logged transactions</p>
+        </div>
+      </div>
+
+      <!-- This Month -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">This Month</span>
+          <div class="p-1.5 bg-amber-50 text-amber-500 rounded-lg">
+            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div>
+          <p id="statMonth" class="text-2xl sm:text-3xl font-extrabold text-slate-800">₹0.00</p>
+          <p class="text-[10px] text-slate-400 font-medium mt-0.5" id="statMonthLabel">Current month spend</p>
+        </div>
+      </div>
+
+      <!-- Top Category -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Top Category</span>
+          <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div>
+          <p id="statTopCategory" class="text-base sm:text-lg font-extrabold text-slate-800 truncate">—</p>
+          <p id="statTopCategoryAmount" class="text-[10px] text-slate-400 font-medium mt-0.5">Highest spend area</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Charts Section (Chart.js Visual Analytics) -->
+    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="font-bold text-slate-900 text-base sm:text-lg">Spending Analytics & Visual Insights</h2>
+          <p class="text-xs text-slate-400">Live breakdown of family & personal expenditures</p>
+        </div>
+
+        <!-- Chart Mode Switcher Tabs -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold self-stretch sm:self-auto justify-center">
+          <button id="btnChartDoughnut" onclick="setChartType('doughnut')" class="px-3 py-1.5 rounded-lg bg-white text-teal-700 shadow-xs transition">
+            🍩 Categories
           </button>
+          <button id="btnChartBar" onclick="setChartType('bar')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            📊 Monthly Trends
+          </button>
+          <button id="btnChartPie" onclick="setChartType('pie')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            🥧 Pie Chart
+          </button>
+        </div>
+      </div>
+
+      <!-- Chart Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center pt-2">
+        <!-- Canvas Container -->
+        <div class="md:col-span-5 flex flex-col items-center justify-center">
+          <div class="relative w-full max-w-[280px] sm:max-w-[300px] aspect-square flex items-center justify-center">
+            <canvas id="categoryChart"></canvas>
+            <div id="chartCenterText" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
+              <span id="chartCenterAmount" class="text-sm font-extrabold text-slate-800">₹0.00</span>
+            </div>
+            <div id="chartEmptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 rounded-2xl border border-dashed border-slate-200 text-center p-4">
+              <i data-lucide="bar-chart-3" class="w-8 h-8 text-slate-300 mb-2"></i>
+              <p class="text-xs font-bold text-slate-600">No chart data yet</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Add an expense below to view visual breakdown.</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Interactive Breakdown / Legend List -->
+        <div class="md:col-span-7">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Category Breakdown</span>
+            <span id="chartLegendSubtitle" class="text-[11px] text-slate-400 font-medium">Click category to filter</span>
+          </div>
+          <div id="categoryBreakdownList" class="space-y-2 max-h-[250px] overflow-y-auto pr-1 text-xs">
+            <!-- Dynamic Breakdown Cards Injected Here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions & Filter Bar -->
+    <div class="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+      <!-- Add & Export Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button onclick="openModal()" class="flex-1 sm:flex-none bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs sm:text-sm px-4 py-3 sm:py-2.5 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add Expense
+        </button>
+        <button onclick="exportCSV()" class="bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs sm:text-sm px-4 py-3 sm:py-2.5 rounded-xl flex items-center justify-center gap-2 transition border border-slate-200/60 cursor-pointer">
+          <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="flex flex-col sm:flex-row items-center gap-2">
+        <!-- Search bar -->
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 w-full sm:w-auto">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
+          <input type="text" id="searchInput" oninput="renderExpenses()" placeholder="Search description..." class="bg-transparent text-xs font-semibold text-slate-700 outline-none w-full sm:w-36 placeholder:text-slate-400" />
+        </div>
+
+        <!-- Category Dropdown Filter -->
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 w-full sm:w-auto">
+          <span class="text-[11px] font-bold uppercase text-slate-400 whitespace-nowrap">Category:</span>
+          <select id="categoryFilter" onchange="renderExpenses()" class="bg-transparent text-xs font-semibold text-slate-700 outline-none w-full cursor-pointer">
+            <option value="All">All Categories</option>
+            <option value="Travel">🚗 Travel</option>
+            <option value="Fuel">⛽ Fuel</option>
+            <option value="Food & Dining">🍕 Food & Dining</option>
+            <option value="Hotel & Stay">🏨 Hotel & Stay</option>
+            <option value="Company Related">💼 Company Related</option>
+            <option value="Groceries">🛒 Groceries</option>
+            <option value="Fruits & Vegetables">🥦 Fruits & Vegetables</option>
+            <option value="Clothes & Apparel">👕 Clothes & Apparel</option>
+            <option value="Health & Healthcare">💊 Health & Healthcare</option>
+            <option value="Other Expenses">📦 Other Expenses</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4/5-Column Expense History Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base">Expense Log & Ledger</h3>
+          <span id="filteredCountBadge" class="text-[11px] font-semibold bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full border border-teal-100">0 records</span>
+        </div>
+        <button id="resetFilterBtn" onclick="resetFilters()" class="hidden text-xs text-teal-600 font-bold hover:underline">
+          Clear filters
+        </button>
+      </div>
+
+      <div class="overflow-x-auto table-responsive">
+        <table class="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr class="bg-slate-50/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+              <th class="py-3 px-4">Date</th>
+              <th class="py-3 px-4">Category & Note</th>
+              <th class="py-3 px-4 text-right">Price</th>
+              <th class="py-3 px-4 text-right">Sum (Total)</th>
+              <th class="py-3 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12 px-4">
+        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="receipt" class="w-6 h-6"></i>
+        </div>
+        <p class="font-bold text-slate-700 text-sm sm:text-base">No expenses recorded yet</p>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Tap "Add Expense" to start tracking groceries, fuel, meals, and family costs.</p>
+        <button onclick="openModal()" class="mt-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl inline-flex items-center gap-2 shadow-sm">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add First Expense
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Add / Edit Expense Modal -->
+  <div id="addModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="receipt-text" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="font-bold text-slate-900 text-base sm:text-lg">Record Expense</h3>
+            <p class="text-[11px] text-slate-400">Save to instant persistent storage</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="expenseForm" onsubmit="handleSaveExpense(event)" class="space-y-3.5">
+        <input type="hidden" id="editExpenseId" value="" />
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Date</label>
+          <input type="date" id="inputDate" required class="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium outline-none focus:ring-2 focus:ring-teal-500 bg-white" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Category</label>
+          <select id="inputCategory" required class="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 bg-white cursor-pointer">
+            <option value="Groceries">🛒 Groceries</option>
+            <option value="Fruits & Vegetables">🥦 Fruits & Vegetables</option>
+            <option value="Food & Dining">🍕 Food & Dining</option>
+            <option value="Fuel">⛽ Fuel</option>
+            <option value="Travel">🚗 Travel</option>
+            <option value="Clothes & Apparel">👕 Clothes & Apparel</option>
+            <option value="Health & Healthcare">💊 Health & Healthcare</option>
+            <option value="Hotel & Stay">🏨 Hotel & Stay</option>
+            <option value="Company Related">💼 Company Related</option>
+            <option value="Other Expenses">📦 Other Expenses</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Description / Note <span class="text-slate-400 font-normal">(Optional)</span></label>
+          <input type="text" id="inputDesc" placeholder="e.g. Weekly supermarket run, Petrol refill" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium outline-none focus:ring-2 focus:ring-teal-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Amount (₹)</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-sm font-bold text-slate-400">₹</span>
+            <input type="number" step="0.01" min="0.01" id="inputPrice" placeholder="0.00" required class="w-full border border-slate-200 rounded-xl py-2.5 pl-8 pr-3 text-xs outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900" />
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer">Cancel</button>
+          <button type="submit" id="btnSubmitForm" class="w-1/2 py-2.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer">Save Expense</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#2A2A2A]/45 p-5 backdrop-blur-[2px]" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-[#FDF5E6] p-6 shadow-2xl">
-      <div class="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600"><i data-lucide="triangle-alert" class="h-6 w-6" aria-hidden="true"></i></div>
-      <h2 id="confirmTitle" class="mt-4 text-lg font-extrabold text-ink">Remove expense?</h2>
-      <p id="confirmDescription" class="mt-2 text-sm leading-6 text-[#7C6C56]">This action cannot be undone.</p>
-      <div class="mt-6 flex gap-2">
-        <button id="confirmCancelButton" type="button" class="flex-1 rounded-xl border border-[#E3D3B8] px-4 py-3 text-sm font-bold text-[#4F4134] transition hover:bg-[#F3E8D5] focus:outline-none focus:ring-4 focus:ring-[#EADBC2]">Keep it</button>
-        <button id="confirmActionButton" type="button" class="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700 focus:outline-none focus:ring-4 focus:ring-rose-100">Remove</button>
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 modal-enter text-center">
+      <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="trash-2" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-900 text-base">Delete Expense?</h4>
+        <p class="text-xs text-slate-500 mt-1">This record will be permanently deleted from local storage.</p>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeDeleteModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" onclick="executeDeleteExpense()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md">Delete</button>
       </div>
     </div>
   </div>
 
-  <div id="installHelpModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#2A2A2A]/45 p-5 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
-    <div class="modal-enter w-full max-w-sm rounded-[1.75rem] bg-[#FDF5E6] p-6 shadow-2xl">
-      <div class="flex items-start justify-between gap-4">
-        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600"><i data-lucide="smartphone" class="h-6 w-6" aria-hidden="true"></i></div>
-        <button id="closeInstallHelpButton" type="button" class="grid h-10 w-10 place-items-center rounded-xl text-[#7C6C56] transition hover:bg-[#F0E2CB] hover:text-[#2A2A2A] focus:outline-none focus:ring-4 focus:ring-brand-100" aria-label="Close install instructions"><i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i></button>
+  <!-- Clear All Confirmation Modal -->
+  <div id="clearAllModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 modal-enter text-center">
+      <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
       </div>
-      <h2 id="installHelpTitle" class="mt-4 text-lg font-extrabold text-ink">Install Expense Tracker Pro</h2>
-      <div class="mt-3 space-y-3 text-sm leading-6 text-[#6B5B46]">
-        <p>On iPhone or iPad, this app installs from Safari’s Share menu.</p>
-        <ol class="list-decimal space-y-1 pl-5">
-          <li>Tap the <strong class="font-extrabold text-[#2A2A2A]">Share</strong> button in Safari.</li>
-          <li>Choose <strong class="font-extrabold text-[#2A2A2A]">Add to Home Screen</strong>.</li>
-          <li>Tap <strong class="font-extrabold text-[#2A2A2A]">Add</strong> to use it like an app.</li>
-        </ol>
+      <div>
+        <h4 class="font-bold text-slate-900 text-base">Clear All Expenses?</h4>
+        <p class="text-xs text-slate-500 mt-1">This will erase all recorded expense entries from both LocalStorage and IndexedDB.</p>
       </div>
-      <button id="installHelpDoneButton" type="button" class="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100">Got it</button>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeClearAllModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold">Cancel</button>
+        <button type="button" onclick="executeClearAll()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md">Erase Everything</button>
+      </div>
     </div>
   </div>
 
-  <div id="toastRegion" class="pointer-events-none fixed bottom-24 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2" aria-live="polite" aria-atomic="true"></div>
+  <!-- iOS Install Instructions Modal -->
+  <div id="iosInstallModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-5 h-5 text-teal-600"></i>
+          <h3 class="font-bold text-slate-900 text-base">Install on iPhone / iPad</h3>
+        </div>
+        <button onclick="closeIosInstallModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-600">
+        <p class="font-semibold text-slate-800">To install Expense Tracker Pro as a standalone app:</p>
+        <div class="flex items-start gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">1</span>
+          <p>Tap the <strong>Share</strong> button in Safari's bottom toolbar (<i data-lucide="share" class="w-3.5 h-3.5 inline"></i>).</p>
+        </div>
+        <div class="flex items-start gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">2</span>
+          <p>Scroll down and select <strong>"Add to Home Screen"</strong> (<i data-lucide="plus-square" class="w-3.5 h-3.5 inline"></i>).</p>
+        </div>
+        <div class="flex items-start gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">3</span>
+          <p>Tap <strong>Add</strong> in the top-right corner to launch directly from your home screen!</p>
+        </div>
+      </div>
+      <button onclick="closeIosInstallModal()" class="w-full py-2.5 bg-teal-600 text-white rounded-xl text-xs font-bold">Got it</button>
+    </div>
+  </div>
 
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-xs z-50 pointer-events-none space-y-2"></div>
+
+  <!-- Application Script -->
   <script>
-    (() => {
-      'use strict';
+    /* ==========================================================================
+       CONSTANTS & CONFIGURATION
+       ========================================================================== */
+    const STORAGE_KEY = 'expense_tracker_master_data_v3';
+    const DRAFT_KEY = 'expense_tracker_draft_v3';
+    const TOMBSTONE_KEY = 'expense_tracker_tombstones_v3';
+    const DB_NAME = 'ExpenseTrackerDB_v3';
+    const DB_VERSION = 1;
+    const DB_STORE = 'expenses';
 
-      // ── Dual-Layer Storage Engine with Instant Sync ──────────────────────
-      // Layer 1 (localStorage) receives a SYNCHRONOUS, blocking write on every
-      // mutation, guaranteed to complete before a mobile OS can terminate the
-      // PWA process on a swipe-quit. Layer 2 (IndexedDB) is the asynchronous
-      // permanent secondary store, written immediately after. At startup
-      // Layer 1 is read first for an instant paint, then merged with Layer 2.
-      const STORAGE_KEY = 'expense_tracker_master_data';
-      const DRAFT_KEY = 'expense_tracker_entry_draft';
-      const TOMBSTONE_KEY = 'expense_tracker_tombstones';
-      const LEGACY_STORAGE_KEYS = ['expenses_data', 'expense-tracker-pro-expenses-v1'];
-      const DB_NAME = 'ExpenseTrackerDB_v2';
-      const DB_VERSION = 1;
-      const STORE_NAME = 'expenses';
-      const LEGACY_DB_NAME = 'ExpenseTrackerDB';
-      let db = null;
+    const CATEGORY_MAP = {
+      'Groceries': { label: 'Groceries', emoji: '🛒', badge: '🛒 Groceries', color: '#10b981' },
+      'Fruits & Vegetables': { label: 'Fruits & Vegetables', emoji: '🥦', badge: '🥦 Fruits & Vegetables', color: '#84cc16' },
+      'Food & Dining': { label: 'Food & Dining', emoji: '🍕', badge: '🍕 Food & Dining', color: '#f97316' },
+      'Fuel': { label: 'Fuel', emoji: '⛽', badge: '⛽ Fuel', color: '#ef4444' },
+      'Travel': { label: 'Travel', emoji: '🚗', badge: '🚗 Travel', color: '#06b6d4' },
+      'Clothes & Apparel': { label: 'Clothes & Apparel', emoji: '👕', badge: '👕 Clothes & Apparel', color: '#ec4899' },
+      'Health & Healthcare': { label: 'Health & Healthcare', emoji: '💊', badge: '💊 Health & Healthcare', color: '#8b5cf6' },
+      'Hotel & Stay': { label: 'Hotel & Stay', emoji: '🏨', badge: '🏨 Hotel & Stay', color: '#3b82f6' },
+      'Company Related': { label: 'Company Related', emoji: '💼', badge: '💼 Company Related', color: '#0d9488' },
+      'Other Expenses': { label: 'Other Expenses', emoji: '📦', badge: '📦 Other Expenses', color: '#64748b' }
+    };
 
-      /* ── Hand-drawn, cross-hatched category marks ─────────────────────────
-         Every mark is a single-colour vector outline drawn in the artisanal
-         style of the logo: confident ink contours, light hatching for shade
-         and a soft wash fill. They inherit `currentColor` from their badge. */
-      const CATEGORIES = {
-        'Travel': {
-          // Antique mariner's compass
-          color: 'bg-[#E0EDEA] text-[#1D7373] ring-[#1D7373]/25',
-          art: `<circle cx="12" cy="12" r="8.6" class="cat-fill"/>
-                <circle cx="12" cy="12" r="8.6" class="cat-ink"/>
-                <circle cx="12" cy="12" r="6.3" class="cat-hatch"/>
-                <path d="M12 3.4v1.7M12 18.9v1.7M3.4 12h1.7M18.9 12h1.7" class="cat-hatch"/>
-                <path d="M15.6 8.4 10.9 10.9 8.4 15.6 13.1 13.1Z" class="cat-ink"/>
-                <path d="M15.6 8.4 10.9 10.9 13.1 13.1Z" class="cat-fill"/>
-                <circle cx="12" cy="12" r=".85" class="cat-dot"/>`
-        },
-        'Fuel': {
-          // Old-fashioned hand-pump fuel canister
-          color: 'bg-[#F7E8D6] text-[#A6612F] ring-[#A6612F]/25',
-          art: `<path d="M5 8.4c0-.8.6-1.4 1.4-1.4h6.1c.8 0 1.4.6 1.4 1.4v10.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4Z" class="cat-fill"/>
-                <path d="M5 8.4c0-.8.6-1.4 1.4-1.4h6.1c.8 0 1.4.6 1.4 1.4v10.2c0 .8-.6 1.4-1.4 1.4H6.4c-.8 0-1.4-.6-1.4-1.4Z" class="cat-ink"/>
-                <path d="M8 7V5.4c0-.5.4-.9.9-.9h1.3c.5 0 .9.4.9.9V7" class="cat-ink"/>
-                <path d="M13.9 9.9h2.5c.9 0 1.6.7 1.6 1.6v4c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6" class="cat-ink"/>
-                <path d="M6.9 10.6h5.1M6.9 13.1h5.1M6.9 15.6h3.4" class="cat-hatch"/>
-                <path d="M16.4 11.5v1.6" class="cat-hatch"/>`
-        },
-        'Food': {
-          // Cross-hatched bread loaf with a fork
-          color: 'bg-[#F8E3DA] text-[#A3482B] ring-[#A3482B]/25',
-          art: `<path d="M3.3 14.9c0-3.6 2.3-6.5 5.2-6.5s5.2 2.9 5.2 6.5v3.2c0 .6-.4 1-1 1H4.3c-.6 0-1-.4-1-1Z" class="cat-fill"/>
-                <path d="M3.3 14.9c0-3.6 2.3-6.5 5.2-6.5s5.2 2.9 5.2 6.5v3.2c0 .6-.4 1-1 1H4.3c-.6 0-1-.4-1-1Z" class="cat-ink"/>
-                <path d="M3.4 15.3h10.2" class="cat-hatch"/>
-                <path d="M5 12.3 6.7 10.4M7.3 12.8 9 10.9M9.6 13 11.2 11.3" class="cat-hatch"/>
-                <path d="M17.3 4.4v3.4c0 1.1.9 2 2 2s2-.9 2-2V4.4" class="cat-ink"/>
-                <path d="M19.3 4.4v3.2" class="cat-hatch"/>
-                <path d="M19.3 9.8v9.4" class="cat-ink"/>`
-        },
-        'Hotel': {
-          // Aged skeleton room key
-          color: 'bg-[#E4EDF0] text-[#3F5E6B] ring-[#3F5E6B]/25',
-          art: `<circle cx="6.3" cy="12" r="3.6" class="cat-fill"/>
-                <circle cx="6.3" cy="12" r="3.6" class="cat-ink"/>
-                <circle cx="6.3" cy="12" r="1.4" class="cat-hatch"/>
-                <path d="M9.9 12h10.3" class="cat-ink"/>
-                <path d="M16.5 12v2.9M19.1 12v2.2" class="cat-ink"/>
-                <path d="M12.6 12v-1.7M14.4 12v-1.2" class="cat-hatch"/>`
-        },
-        'Company Related': {
-          // Miniature leather notebook from the logo
-          color: 'bg-[#EFE6DA] text-[#5B4636] ring-[#5B4636]/25',
-          art: `<path d="M5.6 4.3h10.9c.8 0 1.5.7 1.5 1.5v12.4c0 .8-.7 1.5-1.5 1.5H5.6Z" class="cat-fill"/>
-                <path d="M5.6 4.3h10.9c.8 0 1.5.7 1.5 1.5v12.4c0 .8-.7 1.5-1.5 1.5H5.6Z" class="cat-ink"/>
-                <path d="M5.6 4.3c-1 0-1.8.8-1.8 1.8v11.8c0 1 .8 1.8 1.8 1.8" class="cat-ink"/>
-                <path d="M13.9 4.3v15.4" class="cat-ink"/>
-                <path d="M6.6 8.1h5.6M6.6 11h5.6M6.6 13.9h3.9" class="cat-hatch"/>`
-        }
-      };
+    const LEGACY_CATEGORY_ALIASES = {
+      'Food': 'Food & Dining',
+      'Hotel': 'Hotel & Stay',
+      'Company': 'Company Related',
+      'Clothes': 'Clothes & Apparel',
+      'Health': 'Health & Healthcare',
+      'Other': 'Other Expenses'
+    };
 
-      // Ruled-ledger mark used when no single category is selected.
-      const LEDGER_ART = `<path d="M4.2 6.1h15.6M4.2 10.3h15.6M4.2 14.5h15.6M4.2 18.7h9.6" class="cat-ink"/>`;
+    let expenses = [];
+    let chartInstance = null;
+    let currentChartMode = 'doughnut'; // 'doughnut' | 'bar' | 'pie'
+    let pendingDeleteId = null;
+    let deferredInstallPrompt = null;
+    let idbRef = null;
 
-      /** Wrap raw illustration paths in an SVG canvas. */
-      function categoryArtwork(name) {
-        const category = CATEGORIES[name];
-        return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${category ? category.art : LEDGER_ART}</svg>`;
-      }
-
-      /**
-       * Build the badge shown next to a category in the ledger table.
-       * Returns an artisanal, hand-drawn vector mark instead of an emoji.
-       */
-      function getCategoryBadge(name, { size = 'md' } = {}) {
-        const category = CATEGORIES[name];
-        if (!category) return '';
-        const box = size === 'sm' ? 'h-8 w-8 rounded-lg' : 'h-10 w-10 rounded-xl';
-        return `<span class="category-icon grid ${box} shrink-0 place-items-center ring-1 ${category.color}" role="img" aria-label="${escapeHTML(name)}">${categoryArtwork(name)}</span>`;
-      }
-
-      /** Mirror the chosen category's illustration inside the select controls. */
-      function updateSelectMarks() {
-        if (elements.filterMark) elements.filterMark.innerHTML = categoryArtwork(elements.categoryFilter.value);
-        if (elements.categoryMark) elements.categoryMark.innerHTML = categoryArtwork(elements.expenseCategory.value);
-      }
-
-      const $ = (selector) => document.querySelector(selector);
-      const elements = {
-        todayBadge: $('#todayBadge'),
-        heroTotal: $('#heroTotal'),
-        entryCount: $('#entryCount'),
-        monthTotal: $('#monthTotal'),
-        monthCaption: $('#monthCaption'),
-        topCategory: $('#topCategory'),
-        topCategoryCaption: $('#topCategoryCaption'),
-        categoryFilter: $('#categoryFilter'),
-        filterMark: $('#filterMark'),
-        categoryMark: $('#categoryMark'),
-        activeFilterLine: $('#activeFilterLine'),
-        activeFilterText: $('#activeFilterText'),
-        clearFilterButton: $('#clearFilterButton'),
-        listSubtitle: $('#listSubtitle'),
-        clearAllButton: $('#clearAllButton'),
-        emptyState: $('#emptyState'),
-        emptyTitle: $('#emptyTitle'),
-        emptyDescription: $('#emptyDescription'),
-        tableContainer: $('#tableContainer'),
-        tableScrollHint: $('#tableScrollHint'),
-        expenseRows: $('#expenseRows'),
-        summaryLabel: $('#summaryLabel'),
-        summaryTotal: $('#summaryTotal'),
-        filterSummary: $('#filterSummary'),
-        filterTotal: $('#filterTotal'),
-        expenseModal: $('#expenseModal'),
-        expenseForm: $('#expenseForm'),
-        expenseDate: $('#expenseDate'),
-        expenseCategory: $('#expenseCategory'),
-        expenseTitle: $('#expenseTitle'),
-        expenseAmount: $('#expenseAmount'),
-        confirmModal: $('#confirmModal'),
-        confirmTitle: $('#confirmTitle'),
-        confirmDescription: $('#confirmDescription'),
-        confirmActionButton: $('#confirmActionButton'),
-        installAppButton: $('#installAppButton'),
-        installHelpModal: $('#installHelpModal'),
-        toastRegion: $('#toastRegion')
-      };
-
-      let expenses = [];
-      let activeFilter = 'All';
-      let pendingConfirmation = null;
-      let lastFocusedElement = null;
-      let deferredInstallPrompt = null;
-      let draftRestoreToastShown = false;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-      function localDateISO(date = new Date()) {
-        const tzOffset = date.getTimezoneOffset() * 60000;
-        return new Date(date.getTime() - tzOffset).toISOString().slice(0, 10);
-      }
-
-      function normalizeExpenses(value) {
-        if (!Array.isArray(value)) return [];
-        return value
-          .filter((item) => item && typeof item.date === 'string' && CATEGORIES[item.category] && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0)
-          .map((item) => ({
-            id: String(item.id || `${item.date}-${Math.random().toString(36).slice(2)}`),
-            date: item.date,
-            category: item.category,
-            title: typeof item.title === 'string' ? item.title.slice(0, 80) : '',
-            amount: Number(item.amount),
-            createdAt: Number(item.createdAt) || Date.now()
-          }));
-      }
-
-      /** Read every localStorage layer, legacy keys first so the canonical key wins. */
-      function readLocalExpenses() {
-        const merged = new Map();
-        for (const key of [...LEGACY_STORAGE_KEYS, STORAGE_KEY]) {
-          try {
-            normalizeExpenses(JSON.parse(localStorage.getItem(key) || '[]'))
-              .forEach((item) => merged.set(item.id, item));
-          } catch (error) {
-            console.warn(`Could not read saved expenses from ${key}.`, error);
-          }
-        }
-        return [...merged.values()];
-      }
-
-      /**
-       * Layer 1 — synchronous, blocking write. This is the write that is
-       * guaranteed to finish before the OS can kill the PWA process.
-       */
-      function syncToLocalStorage(data) {
+    /* ==========================================================================
+       DUAL-LAYER STORAGE ENGINE (SYNCHRONOUS LOCALSTORAGE + ASYNC INDEXEDDB)
+       ========================================================================== */
+    function openIDB() {
+      return new Promise((resolve) => {
+        if (idbRef) return resolve(idbRef);
+        if (!('indexedDB' in window)) return resolve(null);
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          // Canonical storage now contains the merged data. Removing old keys
-          // prevents deleted legacy records from being re-imported next launch.
-          LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
-        } catch (error) {
-          console.error('LocalStorage write error:', error);
-        }
-      }
-
-      /** Layer 2 — open the asynchronous permanent store. */
-      function openIndexedDB() {
-        if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB is not supported.'));
-        return new Promise((resolve, reject) => {
-          const request = indexedDB.open(DB_NAME, DB_VERSION);
-          request.onupgradeneeded = (event) => {
-            const database = event.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) {
-              database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) {
+              db.createObjectStore(DB_STORE, { keyPath: 'id' });
             }
           };
-          request.onsuccess = (event) => {
-            const database = event.target.result;
-            database.onversionchange = () => {
-              database.close();
-              if (db === database) db = null;
-            };
-            resolve(database);
+          req.onsuccess = (e) => {
+            idbRef = e.target.result;
+            resolve(idbRef);
           };
-          request.onerror = () => reject(request.error);
-          request.onblocked = () => console.warn('IndexedDB upgrade is blocked by another app window.');
-        });
-      }
+          req.onerror = () => resolve(null);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
 
-      function readAllIndexedDB() {
-        return new Promise((resolve) => {
-          if (!db) {
-            resolve([]);
-            return;
-          }
-          try {
-            const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
-            request.onsuccess = () => resolve(normalizeExpenses(request.result));
-            request.onerror = () => {
-              console.warn('Could not read IndexedDB; using localStorage.', request.error);
-              resolve([]);
-            };
-          } catch (error) {
-            console.warn('Could not open an IndexedDB read transaction.', error);
-            resolve([]);
-          }
-        });
-      }
-
-      function writeAllIndexedDB(data) {
+    async function backupToIndexedDB(items) {
+      try {
+        const db = await openIDB();
         if (!db) return;
-        try {
-          const transaction = db.transaction(STORE_NAME, 'readwrite');
-          const store = transaction.objectStore(STORE_NAME);
-          // Clear first so deleted records never linger in the async layer.
-          store.clear().onsuccess = () => {
-            data.forEach((item) => store.put(item));
-          };
-          transaction.onerror = () => console.warn('Could not save expenses to IndexedDB.', transaction.error);
-          transaction.onabort = transaction.onerror;
-        } catch (error) {
-          console.warn('Could not open an IndexedDB write transaction.', error);
-        }
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        const store = tx.objectStore(DB_STORE);
+        store.clear();
+        items.forEach(item => store.put(item));
+      } catch (err) {
+        console.warn('IDB write failed:', err);
       }
+    }
 
-      /**
-       * Read the pre-v2 database (from earlier builds) without ever creating
-       * it, so its records can be merged forward instead of being lost.
-       */
-      function readLegacyIndexedDB() {
+    async function restoreFromIndexedDB() {
+      try {
+        const db = await openIDB();
+        if (!db) return [];
         return new Promise((resolve) => {
-          if (!('indexedDB' in window)) {
-            resolve([]);
-            return;
-          }
-          let settled = false;
-          const finish = (items, database) => {
-            if (settled) return;
-            settled = true;
-            if (database) database.close();
-            resolve(items);
-          };
-          let request;
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const store = tx.objectStore(DB_STORE);
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function getTombstones() {
+      try {
+        const raw = localStorage.getItem(TOMBSTONE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function addTombstone(id) {
+      try {
+        const list = getTombstones();
+        list.push(id);
+        localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(list.slice(-200)));
+      } catch (e) {}
+    }
+
+    function persistState() {
+      // 1. Synchronous blocking write to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+      } catch (e) {
+        console.error('LocalStorage write failed:', e);
+      }
+      // 2. Secondary backup to IndexedDB
+      backupToIndexedDB(expenses);
+    }
+
+    function normalizeCategory(cat) {
+      if (!cat) return 'Other Expenses';
+      if (CATEGORY_MAP[cat]) return cat;
+      if (LEGACY_CATEGORY_ALIASES[cat]) return LEGACY_CATEGORY_ALIASES[cat];
+      return 'Other Expenses';
+    }
+
+    function normalizeItem(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const id = Number(raw.id) || Date.now() + Math.floor(Math.random() * 1000);
+      const date = typeof raw.date === 'string' && raw.date.trim() ? raw.date.trim() : new Date().toISOString().slice(0, 10);
+      const category = normalizeCategory(raw.category);
+      const desc = typeof raw.desc === 'string' ? raw.desc.trim() : '';
+      const price = parseFloat(raw.price);
+      if (isNaN(price) || price <= 0) return null;
+      return { id, date, category, desc, price: Number(price.toFixed(2)) };
+    }
+
+    async function initStorageEngine() {
+      let loaded = [];
+      const tombstones = new Set(getTombstones());
+
+      // Attempt reading primary key
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) loaded = parsed;
+        }
+      } catch (e) {}
+
+      // Attempt migration from older local keys if empty
+      if (loaded.length === 0) {
+        const legacyKeys = ['expense_tracker_master_data', 'expenses_data', 'expense_tracker_master_data_v2'];
+        for (const k of legacyKeys) {
           try {
-            request = indexedDB.open(LEGACY_DB_NAME);
-          } catch (error) {
-            finish([]);
-            return;
-          }
-          // Opening a database that does not exist would CREATE an empty one —
-          // abort the upgrade instead so fresh installs stay clean.
-          request.onupgradeneeded = () => {
-            try {
-              request.transaction.abort();
-            } catch (abortError) { /* nothing to abort */ }
-            finish([]);
-          };
-          request.onerror = () => finish([]);
-          request.onblocked = () => finish([]);
-          request.onsuccess = (event) => {
-            const legacyDb = event.target.result;
-            if (!legacyDb.objectStoreNames.contains(STORE_NAME)) {
-              finish([], legacyDb);
-              return;
+            const rawLegacy = localStorage.getItem(k);
+            if (rawLegacy) {
+              const parsed = JSON.parse(rawLegacy);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                loaded = parsed;
+                break;
+              }
             }
-            try {
-              const readRequest = legacyDb.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll();
-              readRequest.onsuccess = () => finish(normalizeExpenses(readRequest.result), legacyDb);
-              readRequest.onerror = () => finish([], legacyDb);
-            } catch (error) {
-              finish([], legacyDb);
-            }
-          };
-        });
-      }
-
-      function deleteLegacyIndexedDB() {
-        if (!('indexedDB' in window)) return;
-        try {
-          indexedDB.deleteDatabase(LEGACY_DB_NAME);
-        } catch (error) { /* best-effort cleanup */ }
-      }
-
-      /**
-       * Master persist trigger — call SYNCHRONOUSLY on every state mutation.
-       * The localStorage write blocks until the bytes are committed, so the
-       * data is safe even if the process is killed a millisecond later.
-       */
-      function persistState() {
-        expenses = normalizeExpenses(expenses);
-        // 1. Synchronous write — guaranteed to execute before process termination.
-        syncToLocalStorage(expenses);
-        // 2. Asynchronous write — permanent secondary store.
-        writeAllIndexedDB(expenses);
-      }
-
-      // ── Active-field draft flush ───────────────────────────────────────────
-      // In-progress form input is auto-committed synchronously, so even a
-      // partially typed entry survives a swipe-quit.
-      function flushActiveDraft() {
-        if (!elements.expenseForm) return;
-        try {
-          const title = elements.expenseTitle.value;
-          const amount = String(elements.expenseAmount.value);
-          if (!title.trim() && !amount.trim()) {
-            localStorage.removeItem(DRAFT_KEY);
-            return;
-          }
-          localStorage.setItem(DRAFT_KEY, JSON.stringify({
-            date: elements.expenseDate.value,
-            category: elements.expenseCategory.value,
-            title: title.slice(0, 80),
-            amount,
-            savedAt: Date.now()
-          }));
-        } catch (error) {
-          console.error('Draft write error:', error);
+          } catch (e) {}
         }
       }
 
-      function readActiveDraft() {
-        try {
-          const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-          if (draft && typeof draft === 'object') return draft;
-        } catch (error) {
-          console.warn('Could not read the saved entry draft.', error);
-        }
-        return null;
-      }
-
-      function clearActiveDraft() {
-        try {
-          localStorage.removeItem(DRAFT_KEY);
-        } catch (error) { /* storage unavailable */ }
-      }
-
-      // ── Deletion tombstones ──────────────────────────────────────────────
-      // A delete is committed to localStorage synchronously, but the matching
-      // IndexedDB rewrite is asynchronous. If the process dies in between, the
-      // async layer still holds the record — a tombstone (also written
-      // synchronously) stops the boot-time merge from resurrecting it.
-      function readTombstones() {
-        try {
-          const value = JSON.parse(localStorage.getItem(TOMBSTONE_KEY) || '[]');
-          return Array.isArray(value) ? value.map(String) : [];
-        } catch (error) {
-          return [];
+      // If still empty, check secondary store (IndexedDB)
+      if (loaded.length === 0) {
+        const idbData = await restoreFromIndexedDB();
+        if (Array.isArray(idbData) && idbData.length > 0) {
+          loaded = idbData;
         }
       }
 
-      function rememberTombstones(ids) {
-        if (!ids.length) return;
-        try {
-          const merged = [...new Set([...readTombstones(), ...ids.map(String)])].slice(-500);
-          localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(merged));
-        } catch (error) {
-          console.error('Tombstone write error:', error);
+      // Normalize and filter tombstones
+      const clean = [];
+      const seenIds = new Set();
+      loaded.forEach(item => {
+        const norm = normalizeItem(item);
+        if (norm && !tombstones.has(norm.id) && !seenIds.has(norm.id)) {
+          seenIds.add(norm.id);
+          clean.push(norm);
         }
-      }
+      });
 
-      function writeTombstones(ids) {
+      expenses = clean;
+      persistState();
+      renderExpenses();
+    }
+
+    // Active field and draft flush
+    function flushActiveDraft() {
+      const date = document.getElementById('inputDate')?.value;
+      const category = document.getElementById('inputCategory')?.value;
+      const desc = document.getElementById('inputDesc')?.value;
+      const price = document.getElementById('inputPrice')?.value;
+      const editId = document.getElementById('editExpenseId')?.value;
+      
+      // If modal is open and has input, save draft
+      if (!editId && (desc || price)) {
         try {
-          localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(ids));
-        } catch (error) { /* storage unavailable */ }
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({ date, category, desc, price }));
+        } catch (e) {}
       }
+    }
 
-      /** Synchronously flush everything a force-quit could destroy. */
-      function flushAllState() {
-        flushActiveDraft();
+    function clearDraft() {
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch (e) {}
+    }
+
+    function restoreDraftIfAny() {
+      try {
+        const draftRaw = localStorage.getItem(DRAFT_KEY);
+        if (draftRaw) {
+          const draft = JSON.parse(draftRaw);
+          if (draft.date) document.getElementById('inputDate').value = draft.date;
+          if (draft.category) document.getElementById('inputCategory').value = draft.category;
+          if (draft.desc) document.getElementById('inputDesc').value = draft.desc;
+          if (draft.price) document.getElementById('inputPrice').value = draft.price;
+        }
+      } catch (e) {}
+    }
+
+    // Attach lifecycle event listeners with { capture: true }
+    ['visibilitychange', 'freeze', 'pagehide', 'beforeunload'].forEach(eventType => {
+      window.addEventListener(eventType, () => {
         persistState();
+        flushActiveDraft();
+      }, { capture: true });
+      document.addEventListener(eventType, () => {
+        persistState();
+        flushActiveDraft();
+      }, { capture: true });
+    });
+
+    // Save draft on form typing
+    ['inputDate', 'inputCategory', 'inputDesc', 'inputPrice'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', flushActiveDraft);
+    });
+
+    /* ==========================================================================
+       INITIALIZATION
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      initStorageEngine();
+      
+      // Set today's date
+      const todayISO = new Date().toISOString().slice(0, 10);
+      document.getElementById('inputDate').value = todayISO;
+      
+      // Format current date badge
+      const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+      document.querySelector('#currentDateBadge span').innerText = new Date().toLocaleDateString('en-IN', options);
+      
+      // Initialize Lucide icons
+      lucide.createIcons();
+      
+      // Register Service Worker
+      registerServiceWorker();
+    });
+
+    /* ==========================================================================
+       RENDERING & UI LOGIC
+       ========================================================================== */
+    function getCategoryBadge(cat) {
+      const match = CATEGORY_MAP[cat];
+      return match ? match.badge : (cat || '📦 Other Expenses');
+    }
+
+    function formatINR(val) {
+      const num = typeof val === 'number' ? val : parseFloat(val) || 0;
+      return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderExpenses() {
+      const tbody = document.getElementById('expenseTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const filter = document.getElementById('categoryFilter').value;
+      const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const resetBtn = document.getElementById('resetFilterBtn');
+
+      tbody.innerHTML = '';
+
+      // Sort expenses: Newest date first, then highest ID
+      const sorted = [...expenses].sort((a, b) => {
+        if (b.date !== a.date) return b.date.localeCompare(a.date);
+        return b.id - a.id;
+      });
+
+      let totalSpend = 0;
+      let monthSpend = 0;
+      const categoryTotals = {};
+      const currentMonth = new Date().toISOString().slice(0, 7);
+
+      expenses.forEach((item) => {
+        const priceNum = parseFloat(item.price) || 0;
+        totalSpend += priceNum;
+        if (item.date && item.date.startsWith(currentMonth)) {
+          monthSpend += priceNum;
+        }
+        categoryTotals[item.category] = (categoryTotals[item.category] || 0) + priceNum;
+      });
+
+      // Filtered expenses
+      const filtered = sorted.filter(item => {
+        const matchesCategory = filter === 'All' || item.category === filter;
+        const matchesSearch = !search || 
+          item.category.toLowerCase().includes(search) || 
+          (item.desc && item.desc.toLowerCase().includes(search)) ||
+          item.date.includes(search);
+        return matchesCategory && matchesSearch;
+      });
+
+      // Show / hide reset filter button
+      if (filter !== 'All' || search) {
+        resetBtn.classList.remove('hidden');
+      } else {
+        resetBtn.classList.add('hidden');
       }
 
-      /**
-       * Initialize the storage engine: paint synchronously from localStorage
-       * for an instant UI, then open IndexedDB and merge every layer forward
-       * so no record from any store — current or legacy — is ever lost.
-       */
-      async function initStorageEngine() {
-        // 1. Synchronous load from localStorage for an instant UI paint.
-        expenses = readLocalExpenses();
-        render();
+      document.getElementById('filteredCountBadge').innerText = `${filtered.length} of ${expenses.length} records`;
 
-        // 2. Initialize IndexedDB as the secondary store and merge.
-        try {
-          db = await openIndexedDB();
-          const [idbData, legacyIdbData] = await Promise.all([readAllIndexedDB(), readLegacyIndexedDB()]);
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
 
-          const merged = new Map();
-          idbData.forEach((item) => merged.set(item.id, item));
-          legacyIdbData.forEach((item) => merged.set(item.id, item));
-          // The synchronous layer was written most recently — it wins ties.
-          expenses.forEach((item) => merged.set(item.id, item));
-          const union = [...merged.values()];
+      // Calculate running sum for filtered rows (or overall)
+      let runningSum = 0;
+      // To show running cumulative total in chronological order:
+      // First calculate chronological totals
+      const chronoMap = new Map();
+      let chronoRunning = 0;
+      const chronological = [...expenses].sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.id - b.id;
+      });
+      chronological.forEach(item => {
+        chronoRunning += parseFloat(item.price) || 0;
+        chronoMap.set(item.id, chronoRunning);
+      });
 
-          // Apply tombstones: records deleted just before a kill may still
-          // linger in the asynchronous layer — never bring them back.
-          const tombstoned = new Set(readTombstones());
-          const data = union.filter((item) => !tombstoned.has(item.id));
+      filtered.forEach((item) => {
+        const priceNum = parseFloat(item.price) || 0;
+        const itemSum = chronoMap.get(item.id) || priceNum;
 
-          // Prune tombstones that no longer suppress anything; once both
-          // layers are rewritten clean, the tombstone has done its job.
-          const stillNeeded = union.filter((item) => tombstoned.has(item.id)).map((item) => item.id);
-          if (stillNeeded.length !== tombstoned.size) writeTombstones(stillNeeded);
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/90 transition border-b border-slate-100 group";
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-slate-500 text-xs whitespace-nowrap">
+            <span class="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i> ${item.date}
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="font-bold text-slate-800 inline-block">${getCategoryBadge(item.category)}</span>
+            ${item.desc ? `<span class="text-[11px] text-slate-500 block mt-0.5 truncate max-w-xs sm:max-w-md">${escapeHTML(item.desc)}</span>` : '<span class="text-[10px] text-slate-300 italic block">No description</span>'}
+          </td>
+          <td class="py-3 px-4 text-right font-semibold text-slate-800 whitespace-nowrap">
+            ${formatINR(priceNum)}
+          </td>
+          <td class="py-3 px-4 text-right font-black text-teal-600 whitespace-nowrap">
+            ${formatINR(itemSum)}
+          </td>
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <div class="inline-flex items-center gap-1">
+              <button onclick="openEditModal(${item.id})" title="Edit expense" class="text-slate-400 hover:text-teal-600 hover:bg-teal-50 p-1.5 rounded-lg transition cursor-pointer">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="confirmDeleteExpense(${item.id})" title="Delete expense" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition cursor-pointer">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-          // If either asynchronous store held records localStorage did not
-          // (e.g. the last session was killed mid-write), restore them.
-          if (data.length !== expenses.length || data.some((item) => !expenses.some((existing) => existing.id === item.id))) {
-            expenses = data;
-            render();
-          }
-
-          // Push the merged snapshot back down into both layers.
-          persistState();
-
-          // Legacy records are safely merged — drop the old database so
-          // records deleted later are never resurrected from it.
-          if (legacyIdbData.length) deleteLegacyIndexedDB();
-        } catch (error) {
-          console.warn('IndexedDB fallback active:', error);
+      // Top Category calculation
+      let topCat = '—';
+      let topCatVal = 0;
+      for (const [cat, sum] of Object.entries(categoryTotals)) {
+        if (sum > topCatVal) {
+          topCatVal = sum;
+          topCat = cat;
         }
       }
 
-      function money(value) {
-        return new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(Number(value) || 0);
+      // Update Summary Cards
+      document.getElementById('statGrandTotal').innerText = formatINR(totalSpend);
+      document.getElementById('statEntries').innerText = expenses.length;
+      document.getElementById('statMonth').innerText = formatINR(monthSpend);
+      
+      const currentMonthName = new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+      document.getElementById('statMonthLabel').innerText = `${currentMonthName} spend`;
+
+      if (topCat !== '—') {
+        document.getElementById('statTopCategory').innerText = getCategoryBadge(topCat);
+        document.getElementById('statTopCategoryAmount').innerText = `${formatINR(topCatVal)} spent`;
+      } else {
+        document.getElementById('statTopCategory').innerText = '—';
+        document.getElementById('statTopCategoryAmount').innerText = 'Highest spend area';
       }
 
-      function formatLongDate(dateString) {
-        const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+      // Render Charts & Legends
+      renderCharts(categoryTotals, totalSpend);
+
+      // Refresh Lucide Icons
+      lucide.createIcons();
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    function resetFilters() {
+      document.getElementById('categoryFilter').value = 'All';
+      document.getElementById('searchInput').value = '';
+      renderExpenses();
+    }
+
+    /* ==========================================================================
+       CHART.JS VISUAL ANALYTICS & INSIGHTS
+       ========================================================================== */
+    function setChartType(mode) {
+      currentChartMode = mode;
+      
+      // Update Tab button active styles
+      const tabs = [
+        { id: 'btnChartDoughnut', mode: 'doughnut' },
+        { id: 'btnChartBar', mode: 'bar' },
+        { id: 'btnChartPie', mode: 'pie' }
+      ];
+      tabs.forEach(t => {
+        const el = document.getElementById(t.id);
+        if (t.mode === mode) {
+          el.className = "px-3 py-1.5 rounded-lg bg-white text-teal-700 shadow-xs transition font-bold";
+        } else {
+          el.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition font-semibold";
+        }
+      });
+
+      renderExpenses();
+    }
+
+    function renderCharts(categoryTotals, totalSpend) {
+      const canvas = document.getElementById('categoryChart');
+      const ctx = canvas.getContext('2d');
+      const emptyBox = document.getElementById('chartEmptyState');
+      const centerText = document.getElementById('chartCenterText');
+      const centerAmount = document.getElementById('chartCenterAmount');
+      const listContainer = document.getElementById('categoryBreakdownList');
+      const legendSubtitle = document.getElementById('chartLegendSubtitle');
+
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
       }
 
-      function escapeHTML(value) {
-        return String(value).replace(/[&<>'"]/g, (character) => ({
-          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        })[character]);
+      if (expenses.length === 0 || totalSpend <= 0) {
+        emptyBox.classList.remove('hidden');
+        centerText.classList.add('hidden');
+        listContainer.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">No expense breakdown available</div>';
+        return;
       }
 
-      function sortedExpenses(list) {
-        return [...list].sort((a, b) => {
-          const dateOrder = a.date.localeCompare(b.date);
-          return dateOrder !== 0 ? dateOrder : a.createdAt - b.createdAt;
+      emptyBox.classList.add('hidden');
+
+      if (currentChartMode === 'bar') {
+        // Monthly spending trends view
+        centerText.classList.add('hidden');
+        legendSubtitle.innerText = 'Month-by-month history';
+        renderMonthlyBarChart(ctx, listContainer);
+      } else {
+        // Doughnut / Pie Category view
+        legendSubtitle.innerText = 'Click category to filter ledger';
+        if (currentChartMode === 'doughnut') {
+          centerText.classList.remove('hidden');
+          centerAmount.innerText = formatINR(totalSpend);
+        } else {
+          centerText.classList.add('hidden');
+        }
+
+        const labels = Object.keys(categoryTotals).filter(cat => categoryTotals[cat] > 0);
+        const data = labels.map(cat => categoryTotals[cat]);
+        const colors = labels.map(cat => (CATEGORY_MAP[cat] ? CATEGORY_MAP[cat].color : '#64748b'));
+
+        chartInstance = new Chart(ctx, {
+          type: currentChartMode,
+          data: {
+            labels: labels.map(l => (CATEGORY_MAP[l] ? CATEGORY_MAP[l].label : l)),
+            datasets: [{
+              data: data,
+              backgroundColor: colors,
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: currentChartMode === 'doughnut' ? '68%' : '0%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 'bold' },
+                bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const val = context.raw || 0;
+                    const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : 0;
+                    return ` ${formatINR(val)} (${pct}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        // Render Custom Interactive Legend Cards
+        listContainer.innerHTML = '';
+        labels.forEach((label, i) => {
+          const val = categoryTotals[label];
+          const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : '0';
+          const catInfo = CATEGORY_MAP[label] || { badge: label, color: '#64748b' };
+          
+          const div = document.createElement('div');
+          div.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/60 border border-slate-100 transition cursor-pointer group";
+          div.onclick = () => {
+            document.getElementById('categoryFilter').value = label;
+            renderExpenses();
+          };
+          div.innerHTML = `
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-3 h-3 rounded-full shrink-0 shadow-xs" style="background-color: ${catInfo.color}"></span>
+              <span class="font-bold text-slate-700 group-hover:text-teal-700 truncate">${catInfo.badge}</span>
+            </div>
+            <div class="text-right shrink-0 pl-2">
+              <span class="font-bold text-slate-900 block">${formatINR(val)}</span>
+              <span class="text-[10px] font-semibold text-slate-400 block">${pct}% of spend</span>
+            </div>
+          `;
+          listContainer.appendChild(div);
         });
       }
+    }
 
-      function getFilteredExpenses() {
-        return activeFilter === 'All' ? sortedExpenses(expenses) : sortedExpenses(expenses.filter((expense) => expense.category === activeFilter));
-      }
-
-      function totalOf(list) {
-        return list.reduce((total, expense) => total + expense.amount, 0);
-      }
-
-      function refreshIcons() {
-        if (window.lucide) window.lucide.createIcons();
-      }
-
-      function isStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-      }
-
-      function updateInstallControl(isVisible) {
-        elements.installAppButton.classList.toggle('hidden', !isVisible);
-        elements.installAppButton.classList.toggle('inline-flex', isVisible);
-      }
-
-      function openInstallHelp() {
-        lastFocusedElement = document.activeElement;
-        elements.installHelpModal.classList.remove('hidden');
-        elements.installHelpModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        window.setTimeout(() => $('#installHelpDoneButton').focus(), 50);
-      }
-
-      function closeInstallHelp() {
-        elements.installHelpModal.classList.add('hidden');
-        elements.installHelpModal.classList.remove('flex');
-        document.body.style.overflow = '';
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
-      }
-
-      async function installApp() {
-        if (deferredInstallPrompt) {
-          const installPrompt = deferredInstallPrompt;
-          deferredInstallPrompt = null;
-          updateInstallControl(false);
-          installPrompt.prompt();
-          const choice = await installPrompt.userChoice;
-          if (choice.outcome === 'accepted') showToast('Expense Tracker Pro is installing.');
-          return;
+    function renderMonthlyBarChart(ctx, listContainer) {
+      // Group expenses by Year-Month
+      const monthMap = {};
+      expenses.forEach(e => {
+        const m = (e.date || '').slice(0, 7);
+        if (m) {
+          monthMap[m] = (monthMap[m] || 0) + (parseFloat(e.price) || 0);
         }
-        if (isIOS && !isStandalone()) openInstallHelp();
-      }
+      });
 
-      function registerServiceWorker() {
-        if (!('serviceWorker' in navigator)) return;
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch((error) => {
-            console.warn('Service worker registration failed.', error);
-          });
-        }, { once: true });
-      }
+      const sortedMonths = Object.keys(monthMap).sort();
+      const monthLabels = sortedMonths.map(m => {
+        const [year, month] = m.split('-');
+        const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+        return dateObj.toLocaleString('en-IN', { month: 'short', year: '2-digit' });
+      });
+      const monthData = sortedMonths.map(m => monthMap[m]);
 
-      function render() {
-        const visibleExpenses = getFilteredExpenses();
-        const grandTotal = totalOf(expenses);
-        const visibleTotal = totalOf(visibleExpenses);
-        const now = new Date();
-        const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const currentMonthExpenses = expenses.filter((expense) => expense.date.startsWith(currentMonthPrefix));
-        const categoryTotals = Object.keys(CATEGORIES).map((category) => ({
-          category,
-          total: totalOf(expenses.filter((expense) => expense.category === category))
-        })).filter((item) => item.total > 0).sort((a, b) => b.total - a.total);
-
-        elements.heroTotal.textContent = money(grandTotal);
-        elements.entryCount.textContent = expenses.length.toLocaleString('en-IN');
-        elements.monthTotal.textContent = money(totalOf(currentMonthExpenses));
-        elements.monthCaption.textContent = currentMonthExpenses.length ? `${currentMonthExpenses.length} ${currentMonthExpenses.length === 1 ? 'expense' : 'expenses'} this month` : 'No activity this month';
-        if (categoryTotals.length) {
-          const leadingCategory = categoryTotals[0].category;
-          elements.topCategory.innerHTML = `<span class="flex items-center gap-2">${getCategoryBadge(leadingCategory, { size: 'sm' })}<span class="truncate">${escapeHTML(leadingCategory)}</span></span>`;
-        } else {
-          elements.topCategory.textContent = '—';
-        }
-        elements.topCategoryCaption.textContent = categoryTotals.length ? `${money(categoryTotals[0].total)} spent in this category` : 'Add an expense to begin';
-
-        const isFiltered = activeFilter !== 'All';
-        elements.activeFilterLine.classList.toggle('hidden', !isFiltered);
-        elements.activeFilterLine.classList.toggle('flex', isFiltered);
-        elements.activeFilterText.textContent = `Showing ${activeFilter} expenses`;
-        elements.filterSummary.classList.toggle('hidden', !isFiltered);
-        elements.filterTotal.textContent = money(visibleTotal);
-        elements.summaryLabel.textContent = isFiltered
-          ? `Grand total · ${expenses.length} ${expenses.length === 1 ? 'entry' : 'entries'}`
-          : `Grand total · ${expenses.length} ${expenses.length === 1 ? 'entry' : 'entries'}`;
-        elements.summaryTotal.textContent = money(grandTotal);
-        elements.listSubtitle.textContent = isFiltered
-          ? `${visibleExpenses.length} ${activeFilter} ${visibleExpenses.length === 1 ? 'expense' : 'expenses'} shown`
-          : `${expenses.length} ${expenses.length === 1 ? 'expense' : 'expenses'} recorded`;
-        elements.clearAllButton.classList.toggle('hidden', expenses.length === 0);
-        elements.clearAllButton.classList.toggle('inline-flex', expenses.length > 0);
-
-        const noVisibleExpenses = visibleExpenses.length === 0;
-        elements.emptyState.classList.toggle('hidden', !noVisibleExpenses);
-        elements.tableContainer.classList.toggle('hidden', noVisibleExpenses);
-        elements.tableScrollHint.classList.toggle('hidden', noVisibleExpenses);
-        if (noVisibleExpenses) {
-          elements.emptyTitle.textContent = isFiltered ? `No ${activeFilter} expenses` : 'No expenses yet';
-          elements.emptyDescription.textContent = isFiltered
-            ? `There are no ${activeFilter.toLowerCase()} expenses in your records. Try another category or add a new one.`
-            : 'Keep a clear record of your spending. Add your first expense to get started.';
-          $('#emptyAddButton').classList.toggle('hidden', isFiltered);
-          elements.expenseRows.innerHTML = '';
-        } else {
-          let runningTotal = 0;
-          elements.expenseRows.innerHTML = visibleExpenses.map((expense) => {
-            runningTotal += expense.amount;
-            const safeTitle = escapeHTML(expense.title || 'No description');
-            const titleClass = expense.title ? 'text-[#4F4134]' : 'italic text-[#A4947C]';
-            return `
-              <article class="expense-row grid grid-cols-[1.05fr_2.1fr_1fr_1.05fr_44px] items-center gap-4 px-4 py-3.5 transition hover:bg-[#F3E8D5]/70 sm:px-5" role="row">
-                <div role="cell">
-                  <time datetime="${escapeHTML(expense.date)}" class="text-sm font-bold text-[#4F4134]">${escapeHTML(expense.date)}</time>
-                </div>
-                <div class="flex min-w-0 items-center gap-3" role="cell">
-                  ${getCategoryBadge(expense.category)}
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-extrabold text-ink">${escapeHTML(expense.category)}</p>
-                    <p class="mt-0.5 truncate text-xs ${titleClass}">${safeTitle}</p>
-                  </div>
-                </div>
-                <div class="text-right" role="cell">
-                  <span class="text-sm font-extrabold text-[#2A2A2A]">${money(expense.amount)}</span>
-                </div>
-                <div class="text-right" role="cell">
-                  <span class="text-sm font-extrabold text-brand-700">${money(runningTotal)}</span>
-                </div>
-                <div class="justify-self-end" role="cell">
-                  <button type="button" data-delete-id="${escapeHTML(expense.id)}" class="grid h-10 w-10 place-items-center rounded-xl text-[#A4947C] transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100" aria-label="Delete ${escapeHTML(expense.category)} expense from ${formatLongDate(expense.date)}">
-                    <i data-lucide="trash-2" class="h-4 w-4" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </article>`;
-          }).join('');
-        }
-        updateSelectMarks();
-        refreshIcons();
-      }
-
-      function openExpenseModal() {
-        lastFocusedElement = document.activeElement;
-        elements.expenseForm.reset();
-        elements.expenseDate.value = localDateISO();
-        elements.expenseCategory.value = activeFilter !== 'All' ? activeFilter : 'Travel';
-        // Restore any unsaved entry that survived a forced termination.
-        const draft = readActiveDraft();
-        if (draft) {
-          if (/^\d{4}-\d{2}-\d{2}$/.test(draft.date || '')) elements.expenseDate.value = draft.date;
-          if (CATEGORIES[draft.category]) elements.expenseCategory.value = draft.category;
-          if (typeof draft.title === 'string') elements.expenseTitle.value = draft.title.slice(0, 80);
-          const draftAmount = Number(draft.amount);
-          if (draft.amount !== '' && Number.isFinite(draftAmount) && draftAmount > 0) {
-            elements.expenseAmount.value = String(draft.amount);
-          }
-          if (!draftRestoreToastShown) {
-            draftRestoreToastShown = true;
-            showToast('Unsaved entry restored after the app closed.');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: 'Monthly Spend',
+            data: monthData,
+            backgroundColor: '#0d9488',
+            hoverBackgroundColor: '#0f766e',
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              callbacks: {
+                label: (context) => ` Spend: ${formatINR(context.raw || 0)}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 10, family: 'Plus Jakarta Sans' },
+                callback: (value) => '₹' + value
+              }
+            }
           }
         }
-        updateSelectMarks();
-        elements.expenseModal.classList.remove('hidden');
-        elements.expenseModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        window.setTimeout(() => elements.expenseDate.focus(), 50);
+      });
+
+      // Breakdown list for months
+      listContainer.innerHTML = '';
+      [...sortedMonths].reverse().forEach(m => {
+        const [year, month] = m.split('-');
+        const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+        const name = dateObj.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+        const val = monthMap[m];
+        const count = expenses.filter(e => (e.date || '').startsWith(m)).length;
+
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100";
+        div.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-teal-100 text-teal-700 rounded-lg">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-800 block">${name}</span>
+              <span class="text-[10px] text-slate-400">${count} transaction${count === 1 ? '' : 's'}</span>
+            </div>
+          </div>
+          <span class="font-black text-slate-900">${formatINR(val)}</span>
+        `;
+        listContainer.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       MODAL & FORM HANDLERS
+       ========================================================================== */
+    function openModal() {
+      document.getElementById('editExpenseId').value = '';
+      document.getElementById('modalTitle').innerText = 'Record Expense';
+      document.getElementById('btnSubmitForm').innerText = 'Save Expense';
+      document.getElementById('expenseForm').reset();
+      
+      const todayISO = new Date().toISOString().slice(0, 10);
+      document.getElementById('inputDate').value = todayISO;
+      
+      restoreDraftIfAny();
+      document.getElementById('addModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('inputPrice').focus(), 100);
+    }
+
+    function openEditModal(id) {
+      const item = expenses.find(e => e.id === id);
+      if (!item) return;
+
+      document.getElementById('editExpenseId').value = item.id;
+      document.getElementById('modalTitle').innerText = 'Edit Expense';
+      document.getElementById('btnSubmitForm').innerText = 'Update Expense';
+      document.getElementById('inputDate').value = item.date;
+      document.getElementById('inputCategory').value = item.category;
+      document.getElementById('inputDesc').value = item.desc || '';
+      document.getElementById('inputPrice').value = item.price;
+
+      document.getElementById('addModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('inputPrice').focus(), 100);
+    }
+
+    function closeModal() {
+      document.getElementById('addModal').classList.add('hidden');
+    }
+
+    function handleSaveExpense(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editExpenseId').value;
+      const date = document.getElementById('inputDate').value;
+      const category = normalizeCategory(document.getElementById('inputCategory').value);
+      const desc = document.getElementById('inputDesc').value.trim();
+      const priceVal = parseFloat(document.getElementById('inputPrice').value);
+
+      if (!date || isNaN(priceVal) || priceVal <= 0) {
+        showToast('Please enter a valid amount and date', 'error');
+        return;
       }
 
-      function closeExpenseModal() {
-        elements.expenseModal.classList.add('hidden');
-        elements.expenseModal.classList.remove('flex');
-        document.body.style.overflow = '';
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
-      }
+      const price = Number(priceVal.toFixed(2));
 
-      /** Explicit discard (✕ / Cancel buttons): drop the draft, then close. */
-      function discardExpenseEntry() {
-        clearActiveDraft();
-        elements.expenseForm.reset();
-        closeExpenseModal();
-      }
-
-      function openConfirmation({ title, description, actionLabel, action }) {
-        lastFocusedElement = document.activeElement;
-        pendingConfirmation = action;
-        elements.confirmTitle.textContent = title;
-        elements.confirmDescription.textContent = description;
-        elements.confirmActionButton.textContent = actionLabel;
-        elements.confirmModal.classList.remove('hidden');
-        elements.confirmModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-        window.setTimeout(() => elements.confirmActionButton.focus(), 50);
-      }
-
-      function closeConfirmation() {
-        elements.confirmModal.classList.add('hidden');
-        elements.confirmModal.classList.remove('flex');
-        pendingConfirmation = null;
-        document.body.style.overflow = '';
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
-      }
-
-      function showToast(message, type = 'success') {
-        const style = type === 'error'
-          ? 'border-rose-100 bg-rose-50 text-rose-800'
-          : 'border-brand-100 bg-[#FDF5E6] text-[#4F4134]';
-        const icon = type === 'error' ? 'circle-alert' : 'circle-check';
-        const toast = document.createElement('div');
-        toast.className = `toast-in flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold shadow-lg ${style}`;
-        toast.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5 shrink-0 ${type === 'error' ? 'text-rose-600' : 'text-brand-600'}" aria-hidden="true"></i><span>${escapeHTML(message)}</span>`;
-        elements.toastRegion.replaceChildren(toast);
-        refreshIcons();
-        window.setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
-      }
-
-      function csvCell(value) {
-        const text = String(value ?? '');
-        return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-      }
-
-      function exportCSV() {
-        const visibleExpenses = getFilteredExpenses();
-        if (!visibleExpenses.length) {
-          showToast('There are no expenses to export.', 'error');
-          return;
-        }
-        let runningTotal = 0;
-        const rows = visibleExpenses.map((expense) => {
-          runningTotal += expense.amount;
-          return [expense.date, expense.category, expense.title || '', expense.amount.toFixed(2), runningTotal.toFixed(2)];
+      if (editId) {
+        // Edit existing
+        const targetId = Number(editId);
+        expenses = expenses.map(item => {
+          if (item.id === targetId) {
+            return { id: targetId, date, category, desc, price };
+          }
+          return item;
         });
-        const csv = [['Date', 'Category', 'Description', 'Price (INR)', 'Running Total (INR)'], ...rows]
-          .map((row) => row.map(csvCell).join(','))
-          .join('\r\n');
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        const filterSuffix = activeFilter === 'All' ? 'all-expenses' : activeFilter.toLowerCase().replace(/\s+/g, '-');
-        link.download = `expense-tracker-${filterSuffix}-${localDateISO()}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-        showToast(`${visibleExpenses.length} ${visibleExpenses.length === 1 ? 'expense' : 'expenses'} exported to CSV.`);
-      }
-
-      function handleSubmit(event) {
-        event.preventDefault();
-        const formData = new FormData(elements.expenseForm);
-        const date = String(formData.get('date') || '');
-        const category = String(formData.get('category') || '');
-        const title = String(formData.get('title') || '').trim();
-        const amount = Number(formData.get('amount'));
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !CATEGORIES[category] || !Number.isFinite(amount) || amount <= 0) {
-          showToast('Please enter a valid date, category, and amount.', 'error');
-          return;
-        }
-        expenses.push({
-          id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        showToast('Expense updated successfully!', 'success');
+      } else {
+        // Add new
+        const newExpense = {
+          id: Date.now(),
           date,
           category,
-          title: title.slice(0, 80),
-          amount: Math.round(amount * 100) / 100,
-          createdAt: Date.now()
-        });
-        // Persist INSTANTLY: the synchronous localStorage write inside
-        // persistState() is complete before anything else runs — even if the
-        // user swipes the app away at this exact moment, the record survives.
-        persistState();
-        // The entry is safely stored. Drop the draft and reset the form so it
-        // is not mistaken for an unsaved entry by a later auto-flush.
-        clearActiveDraft();
-        elements.expenseForm.reset();
-        closeExpenseModal();
-        render();
-        showToast('Expense added successfully.');
+          desc,
+          price
+        };
+        expenses.push(newExpense);
+        showToast('Expense saved successfully!', 'success');
       }
 
-      function deleteExpense(id) {
-        const expense = expenses.find((item) => item.id === id);
-        if (!expense) return;
-        openConfirmation({
-          title: 'Remove expense?',
-          description: `${expense.category} · ${money(expense.amount)} from ${formatLongDate(expense.date)} will be permanently removed.`,
-          actionLabel: 'Remove',
-          action: () => {
-            expenses = expenses.filter((item) => item.id !== id);
-            // Tombstone first (synchronous) so a kill before the async layer
-            // catches up cannot resurrect the record on the next launch.
-            rememberTombstones([id]);
-            persistState();
-            render();
-            showToast('Expense removed.');
-          }
-        });
+      clearDraft();
+      persistState();
+      renderExpenses();
+      closeModal();
+      document.getElementById('expenseForm').reset();
+      document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
+    }
+
+    /* ==========================================================================
+       DELETE & CLEAR ACTIONS
+       ========================================================================== */
+    function confirmDeleteExpense(id) {
+      pendingDeleteId = id;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    function executeDeleteExpense() {
+      if (pendingDeleteId === null) return;
+      const idToDelete = pendingDeleteId;
+      addTombstone(idToDelete);
+      expenses = expenses.filter(e => e.id !== idToDelete);
+      persistState();
+      renderExpenses();
+      closeDeleteModal();
+      showToast('Expense deleted', 'info');
+    }
+
+    function confirmClearAll() {
+      document.getElementById('clearAllModal').classList.remove('hidden');
+    }
+
+    function closeClearAllModal() {
+      document.getElementById('clearAllModal').classList.add('hidden');
+    }
+
+    async function executeClearAll() {
+      expenses.forEach(e => addTombstone(e.id));
+      expenses = [];
+      persistState();
+      clearDraft();
+      renderExpenses();
+      closeClearAllModal();
+      showToast('All expense records cleared', 'info');
+    }
+
+    /* ==========================================================================
+       EXPORT CSV (RFC4180 COMPLIANT WITH UTF-8 BOM)
+       ========================================================================== */
+    function exportCSV() {
+      if (expenses.length === 0) {
+        showToast('No expenses to export!', 'error');
+        return;
       }
 
-      function clearAllExpenses() {
-        if (!expenses.length) return;
-        openConfirmation({
-          title: 'Clear all expenses?',
-          description: `This will permanently remove all ${expenses.length} recorded ${expenses.length === 1 ? 'expense' : 'expenses'} from this browser.`,
-          actionLabel: 'Clear all',
-          action: () => {
-            rememberTombstones(expenses.map((item) => item.id));
-            expenses = [];
-            persistState();
-            render();
-            showToast('All expenses cleared.');
-          }
-        });
-      }
+      let csv = '\uFEFFDate,Category,Description,Amount (INR),Running Total (INR)\n';
+      let runningSum = 0;
 
-      async function initialize() {
-        elements.todayBadge.textContent = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date());
-        window.addEventListener('beforeinstallprompt', (event) => {
-          event.preventDefault();
-          deferredInstallPrompt = event;
-          updateInstallControl(true);
-        });
-        window.addEventListener('appinstalled', () => {
-          deferredInstallPrompt = null;
-          updateInstallControl(false);
-          showToast('Expense Tracker Pro is ready on your device.');
-        });
-        if (isIOS && !isStandalone()) updateInstallControl(true);
-        registerServiceWorker();
+      const chronological = [...expenses].sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.id - b.id;
+      });
 
-        elements.installAppButton.addEventListener('click', () => {
-          installApp().catch((error) => {
-            console.warn('Install prompt failed.', error);
-            showToast('The install prompt could not be opened. Please try again.', 'error');
+      chronological.forEach(e => {
+        const priceNum = parseFloat(e.price) || 0;
+        runningSum += priceNum;
+        const safeDesc = (e.desc || '').replace(/"/g, '""');
+        const safeCat = (e.category || '').replace(/"/g, '""');
+        csv += `"${e.date}","${safeCat}","${safeDesc}",${priceNum.toFixed(2)},${runningSum.toFixed(2)}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Expense_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('CSV report downloaded successfully', 'success');
+    }
+
+    /* ==========================================================================
+       PWA INSTALLATION & SERVICE WORKER
+       ========================================================================== */
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.warn('SW registration skipped:', err);
           });
         });
-        $('#closeInstallHelpButton').addEventListener('click', closeInstallHelp);
-        $('#installHelpDoneButton').addEventListener('click', closeInstallHelp);
-        $('#addExpenseButton').addEventListener('click', openExpenseModal);
-        $('#bottomAddButton').addEventListener('click', openExpenseModal);
-        $('#emptyAddButton').addEventListener('click', openExpenseModal);
-        $('#closeModalButton').addEventListener('click', discardExpenseEntry);
-        $('#cancelModalButton').addEventListener('click', discardExpenseEntry);
-        $('#exportButton').addEventListener('click', exportCSV);
-        $('#clearAllButton').addEventListener('click', clearAllExpenses);
-        elements.clearFilterButton.addEventListener('click', () => {
-          activeFilter = 'All';
-          elements.categoryFilter.value = 'All';
-          render();
-        });
-        elements.categoryFilter.addEventListener('change', (event) => {
-          activeFilter = event.target.value;
-          render();
-        });
-        elements.expenseCategory.addEventListener('change', updateSelectMarks);
-        elements.expenseForm.addEventListener('submit', handleSubmit);
-        elements.expenseRows.addEventListener('click', (event) => {
-          const button = event.target.closest('[data-delete-id]');
-          if (button) deleteExpense(button.dataset.deleteId);
-        });
-        $('#confirmCancelButton').addEventListener('click', closeConfirmation);
-        elements.confirmActionButton.addEventListener('click', () => {
-          const action = pendingConfirmation;
-          closeConfirmation();
-          if (action) action();
-        });
-        elements.expenseModal.addEventListener('click', (event) => {
-          if (event.target === elements.expenseModal) closeExpenseModal();
-        });
-        elements.confirmModal.addEventListener('click', (event) => {
-          if (event.target === elements.confirmModal) closeConfirmation();
-        });
-        elements.installHelpModal.addEventListener('click', (event) => {
-          if (event.target === elements.installHelpModal) closeInstallHelp();
-        });
-        document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape') {
-            if (!elements.installHelpModal.classList.contains('hidden')) closeInstallHelp();
-            else if (!elements.confirmModal.classList.contains('hidden')) closeConfirmation();
-            else if (!elements.expenseModal.classList.contains('hidden')) closeExpenseModal();
-          }
-        });
-        // Immediate active-field flush — every keystroke or selection change in
-        // the entry form is snapshotted synchronously, so even a half-typed
-        // entry survives a forced termination.
-        elements.expenseForm.addEventListener('input', flushActiveDraft, { capture: true });
-        elements.expenseForm.addEventListener('change', flushActiveDraft, { capture: true });
-
-        // Mobile lifecycle auto-flushes. Standard lifecycle triggers are
-        // unreliable on mobile WebKit/Chromium when the app is killed from the
-        // recents screen, so every termination signal forces a synchronous
-        // flush with capture enabled.
-        window.addEventListener('visibilitychange', flushAllState, { capture: true });
-        document.addEventListener('visibilitychange', flushAllState, { capture: true });
-        window.addEventListener('freeze', flushAllState, { capture: true });
-        window.addEventListener('pagehide', flushAllState, { capture: true });
-        window.addEventListener('beforeunload', flushAllState, { capture: true });
-
-        // Start the dual-layer storage engine: instant synchronous paint from
-        // localStorage, then the IndexedDB merge (render() runs inside it).
-        await initStorageEngine();
-
-        updateSelectMarks();
-        render();
-        refreshIcons();
       }
+    }
 
-      initialize().catch((error) => {
-        console.error('Application startup failed.', error);
-        expenses = readLocalExpenses();
-        render();
-        refreshIcons();
-      });
-    })();
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) installBtn.classList.add('hidden');
+      showToast('Expense Tracker Pro installed!', 'success');
+    });
+
+    function installPWA() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('pwaInstallBtn').classList.add('hidden');
+          }
+          deferredInstallPrompt = null;
+        });
+      } else if (isIOS) {
+        document.getElementById('iosInstallModal').classList.remove('hidden');
+      } else {
+        showToast('App is ready for offline use or already installed!', 'info');
+      }
+    }
+
+    function closeIosInstallModal() {
+      document.getElementById('iosInstallModal').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       TOAST NOTIFICATION FEEDBACK
+       ========================================================================== */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const typeStyles = {
+        success: 'bg-slate-900 text-teal-400 border-teal-500/40',
+        error: 'bg-slate-900 text-red-400 border-red-500/40',
+        info: 'bg-slate-900 text-slate-100 border-slate-700'
+      };
+
+      const iconMap = {
+        success: 'check-circle-2',
+        error: 'alert-circle',
+        info: 'info'
+      };
+
+      toast.className = `p-3.5 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2.5 toast-anim pointer-events-auto ${typeStyles[type] || typeStyles.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${iconMap[type] || 'info'}" class="w-4 h-4 shrink-0"></i>
+        <span>${escapeHTML(message)}</span>
+      `;
+      
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.25s ease-out';
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    }
   </script>
 </body>
 </html>
