@@ -1,5 +1,5 @@
-/* Expense Tracker Pro — static app shell only. User data is never requested or cached here. */
-const CACHE_NAME = 'expense-tracker-pro-v6';
+/* Expense Tracker Pro — Service Worker for offline PWA functionality */
+const CACHE_NAME = 'expense-tracker-pro-v7';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -14,8 +14,9 @@ const STATIC_ASSETS = [
   './assets/apple-touch-icon.png'
 ];
 const CDN_ASSETS = [
-  'https://cdn.tailwindcss.com/',
-  'https://unpkg.com/lucide@latest'
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/lucide@latest',
+  'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -27,7 +28,7 @@ self.addEventListener('install', (event) => {
         const response = await fetch(url, { mode: 'no-cors' });
         await cache.put(url, response);
       } catch (error) {
-        // CDN assets are optional during installation.
+        // CDN assets are optional during installation
       }
     }));
     await self.skipWaiting();
@@ -51,10 +52,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   const staticPath = url.origin === self.location.origin
     && STATIC_ASSETS.some((asset) => new URL(asset, self.location.href).href === url.href);
-  const cdnAsset = CDN_ASSETS.includes(request.url);
+  const cdnAsset = CDN_ASSETS.some((cdnUrl) => request.url.startsWith(cdnUrl));
 
-  // Ignore every non-shell request. In particular, API/dynamic data can never
-  // enter Cache Storage through this service worker.
   if (!staticPath && !cdnAsset && request.mode !== 'navigate') return;
 
   if (request.mode === 'navigate') {
@@ -62,5 +61,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request).catch(() => null))
+  );
 });
