@@ -72,6 +72,52 @@
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
+    /* Budget progress bar */
+    .budget-bar-fill {
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+    }
+
+    /* Row entrance animation */
+    .row-anim {
+      animation: rowFadeIn 0.28s ease-out both;
+    }
+    @keyframes rowFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Pull-to-refresh indicator */
+    #ptrIndicator {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -64px);
+      z-index: 60;
+      pointer-events: none;
+      transition: opacity 0.15s ease-out;
+    }
+    #ptrIndicator.ptr-snap {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out;
+    }
+    #ptrSpinner.ptr-spinning {
+      animation: ptrSpin 0.7s linear infinite;
+    }
+    @keyframes ptrSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    body.ptr-active {
+      overscroll-behavior-y: contain;
+    }
+
+    /* Tap feedback for native feel */
+    .tap-pop:active {
+      transform: scale(0.96);
+    }
+    .tap-pop {
+      transition: transform 0.12s ease-out;
+    }
+
     /* Toast Animation */
     .toast-anim {
       animation: toastSlideUp 0.25s ease-out forwards;
@@ -109,8 +155,8 @@
           <i data-lucide="download-cloud" class="w-4 h-4"></i> Install App
         </button>
 
-        <button onclick="confirmClearAll()" title="Reset / Clear all data" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition cursor-pointer">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        <button onclick="openSettings()" title="App settings" class="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition cursor-pointer tap-pop">
+          <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
       </div>
     </header>
@@ -169,6 +215,50 @@
           <p id="statTopCategory" class="text-base sm:text-lg font-extrabold text-slate-800 truncate">—</p>
           <p id="statTopCategoryAmount" class="text-[10px] text-slate-400 font-medium mt-0.5">Highest spend area</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Monthly Budget Goal & Progress Bar -->
+    <div id="budgetCard" class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div id="budgetIconWrap" class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-slate-900 text-sm sm:text-base">Monthly Budget Goal</h2>
+            <p id="budgetSubtitle" class="text-[11px] text-slate-400">Track this month's spend against your limit</p>
+          </div>
+        </div>
+        <button onclick="openBudgetModal()" class="text-[11px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-xl transition cursor-pointer tap-pop flex items-center gap-1.5 shrink-0">
+          <i data-lucide="pencil" class="w-3.5 h-3.5"></i> <span id="budgetEditLabel">Set Budget</span>
+        </button>
+      </div>
+
+      <!-- Active budget view -->
+      <div id="budgetActive" class="hidden space-y-2">
+        <div class="flex items-end justify-between gap-2">
+          <div>
+            <p id="budgetSpentText" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">₹0.00</p>
+            <p id="budgetOfText" class="text-[11px] font-semibold text-slate-400">of ₹0.00 budget</p>
+          </div>
+          <div class="text-right">
+            <p id="budgetPercentText" class="text-lg font-extrabold text-teal-600">0%</p>
+            <p id="budgetRemainingText" class="text-[11px] font-semibold text-slate-400">₹0.00 left</p>
+          </div>
+        </div>
+        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+          <div id="budgetBarFill" class="budget-bar-fill h-full rounded-full bg-teal-500" style="width:0%"></div>
+        </div>
+        <p id="budgetStatusText" class="text-[11px] font-bold text-teal-600 flex items-center gap-1.5">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> <span>On track</span>
+        </p>
+      </div>
+
+      <!-- Empty budget state -->
+      <div id="budgetEmpty" class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3 text-center">
+        <p class="text-xs font-bold text-slate-600">No monthly budget set</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Set a limit (e.g. ₹25,000) to see live progress and overspend alerts.</p>
       </div>
     </div>
 
@@ -237,12 +327,22 @@
         </button>
       </div>
 
+      <!-- Date Range Quick Filters -->
+      <div id="rangeToggles" class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-bold self-stretch justify-center">
+        <button data-range="all" onclick="setDateRange('all')" class="px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap">All Time</button>
+        <button data-range="this" onclick="setDateRange('this')" class="px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap">This Month</button>
+        <button data-range="last" onclick="setDateRange('last')" class="px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap">Last Month</button>
+      </div>
+
       <!-- Search & Filters -->
       <div class="flex flex-col sm:flex-row items-center gap-2">
         <!-- Search bar -->
         <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 w-full sm:w-auto">
           <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
-          <input type="text" id="searchInput" oninput="renderExpenses()" placeholder="Search description..." class="bg-transparent text-xs font-semibold text-slate-700 outline-none w-full sm:w-36 placeholder:text-slate-400" />
+          <input type="text" id="searchInput" oninput="renderExpenses()" placeholder="Search notes or category..." class="bg-transparent text-xs font-semibold text-slate-700 outline-none w-full sm:w-40 placeholder:text-slate-400" />
+          <button id="searchClearBtn" onclick="clearSearch()" class="hidden text-slate-400 hover:text-slate-700 cursor-pointer" title="Clear search">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
         </div>
 
         <!-- Category Dropdown Filter -->
@@ -395,11 +495,11 @@
       </div>
       <div>
         <h4 class="font-bold text-slate-900 text-base">Clear All Expenses?</h4>
-        <p class="text-xs text-slate-500 mt-1">This will erase all recorded expense entries from both LocalStorage and IndexedDB.</p>
+        <p class="text-xs text-slate-500 mt-1">This will erase all recorded expense entries from both LocalStorage and IndexedDB. You will be asked to confirm once more.</p>
       </div>
       <div class="flex gap-2 pt-2">
         <button type="button" onclick="closeClearAllModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold">Cancel</button>
-        <button type="button" onclick="executeClearAll()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md">Erase Everything</button>
+        <button type="button" onclick="openClearAllFinalModal()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">Continue</button>
       </div>
     </div>
   </div>
@@ -435,6 +535,150 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-slate-100 text-slate-700 rounded-xl">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base sm:text-lg">App Settings</h3>
+            <p class="text-[11px] text-slate-400">Budget, backups & data controls</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSettings()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5">
+        <button onclick="openBudgetModal()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+          <span class="p-2 bg-teal-50 text-teal-600 rounded-lg"><i data-lucide="target" class="w-4 h-4"></i></span>
+          <span class="flex-1">
+            <span class="block text-xs font-bold text-slate-800">Monthly Budget</span>
+            <span id="settingsBudgetValue" class="block text-[11px] text-slate-400">Not set</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        </button>
+
+        <button onclick="exportJSON()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+          <span class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="hard-drive-download" class="w-4 h-4"></i></span>
+          <span class="flex-1">
+            <span class="block text-xs font-bold text-slate-800">Export Backup (JSON)</span>
+            <span class="block text-[11px] text-slate-400">Download a full copy of your data</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        </button>
+
+        <button onclick="triggerImport()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+          <span class="p-2 bg-purple-50 text-purple-600 rounded-lg"><i data-lucide="hard-drive-upload" class="w-4 h-4"></i></span>
+          <span class="flex-1">
+            <span class="block text-xs font-bold text-slate-800">Import / Restore Backup</span>
+            <span class="block text-[11px] text-slate-400">Merge a previously exported JSON file</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        </button>
+
+        <button onclick="exportCSV()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+          <span class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></span>
+          <span class="flex-1">
+            <span class="block text-xs font-bold text-slate-800">Export Report (CSV)</span>
+            <span class="block text-[11px] text-slate-400">Spreadsheet-friendly ledger</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        </button>
+
+        <button onclick="confirmClearAll()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-red-200 hover:bg-red-50 transition text-left cursor-pointer tap-pop">
+          <span class="p-2 bg-red-50 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></span>
+          <span class="flex-1">
+            <span class="block text-xs font-bold text-red-600">Clear All Data</span>
+            <span class="block text-[11px] text-slate-400">Double confirmation required</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-red-200"></i>
+        </button>
+      </div>
+
+      <div class="pt-1 border-t border-slate-100">
+        <p class="text-[10px] text-slate-400 text-center pt-2.5">Expense Tracker Pro · v2.0 · Offline-ready PWA</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden import file input -->
+  <input type="file" id="importFileInput" accept="application/json,.json" class="hidden" onchange="handleImportFile(event)" />
+
+  <!-- Monthly Budget Modal -->
+  <div id="budgetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Monthly Budget</h3>
+            <p class="text-[11px] text-slate-400">Spending limit for each month</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBudgetModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="budgetForm" onsubmit="saveBudget(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Budget Amount (₹)</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-sm font-bold text-slate-400">₹</span>
+            <input type="number" id="inputBudget" min="0" step="0.01" inputmode="decimal" placeholder="25000"
+              class="w-full border border-slate-200 rounded-xl p-2.5 pl-7 text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Leave empty or enter 0 to remove the budget.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="quickBudget(10000)" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg cursor-pointer">₹10,000</button>
+          <button type="button" onclick="quickBudget(25000)" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg cursor-pointer">₹25,000</button>
+          <button type="button" onclick="quickBudget(50000)" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg cursor-pointer">₹50,000</button>
+          <button type="button" onclick="quickBudget(100000)" class="text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg cursor-pointer">₹1,00,000</button>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button type="button" onclick="closeBudgetModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+          <button type="submit" class="w-1/2 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">Save Budget</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Clear All: Second (Final) Confirmation Modal -->
+  <div id="clearAllFinalModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs hidden flex items-center justify-center p-4 z-[60]">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 modal-enter text-center">
+      <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-900 text-base">Final Confirmation</h4>
+        <p class="text-xs text-slate-500 mt-1">Type <strong class="text-red-600">DELETE</strong> below to permanently erase all expense records. This cannot be undone.</p>
+      </div>
+      <input type="text" id="clearConfirmInput" oninput="validateClearConfirm()" placeholder="Type DELETE"
+        class="w-full border border-slate-200 rounded-xl p-2.5 text-center text-xs font-bold tracking-widest uppercase outline-none focus:ring-2 focus:ring-red-500" />
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="closeClearAllFinalModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+        <button type="button" id="finalClearBtn" disabled onclick="executeClearAll()" class="w-1/2 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">Erase Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pull-to-Refresh Indicator -->
+  <div id="ptrIndicator" class="opacity-0">
+    <div class="bg-white shadow-lg border border-slate-200 rounded-full p-2.5 text-teal-600">
+      <i id="ptrSpinner" data-lucide="refresh-cw" class="w-5 h-5 block"></i>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-xs z-50 pointer-events-none space-y-2"></div>
 
@@ -446,6 +690,7 @@
     const STORAGE_KEY = 'expense_tracker_master_data_v3';
     const DRAFT_KEY = 'expense_tracker_draft_v3';
     const TOMBSTONE_KEY = 'expense_tracker_tombstones_v3';
+    const BUDGET_KEY = 'expense_tracker_monthly_budget_v1';
     const DB_NAME = 'ExpenseTrackerDB_v3';
     const DB_VERSION = 1;
     const DB_STORE = 'expenses';
@@ -478,6 +723,43 @@
     let pendingDeleteId = null;
     let deferredInstallPrompt = null;
     let idbRef = null;
+    let monthlyBudget = 0;          // 0 = no budget set
+    let currentRange = 'all';       // 'all' | 'this' | 'last'
+
+    /* ==========================================================================
+       NATIVE UX HELPERS (HAPTIC FEEDBACK)
+       ========================================================================== */
+    function haptic(pattern = 10) {
+      try {
+        if (navigator.vibrate) navigator.vibrate(pattern);
+      } catch (e) {}
+    }
+
+    // Global light haptic on any button / control tap
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('button, select, a, [role="button"]')) haptic(8);
+    }, { capture: true });
+
+    /* ==========================================================================
+       MONTHLY BUDGET STORAGE
+       ========================================================================== */
+    function loadBudget() {
+      try {
+        const raw = localStorage.getItem(BUDGET_KEY);
+        const val = parseFloat(raw);
+        monthlyBudget = isNaN(val) || val <= 0 ? 0 : Number(val.toFixed(2));
+      } catch (e) {
+        monthlyBudget = 0;
+      }
+      return monthlyBudget;
+    }
+
+    function persistBudget() {
+      try {
+        if (monthlyBudget > 0) localStorage.setItem(BUDGET_KEY, String(monthlyBudget));
+        else localStorage.removeItem(BUDGET_KEY);
+      } catch (e) {}
+    }
 
     /* ==========================================================================
        DUAL-LAYER STORAGE ENGINE (SYNCHRONOUS LOCALSTORAGE + ASYNC INDEXEDDB)
@@ -690,7 +972,9 @@
        INITIALIZATION
        ========================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
+      loadBudget();
       initStorageEngine();
+      renderRangeToggles();
       
       // Set today's date
       const todayISO = new Date().toISOString().slice(0, 10);
@@ -705,6 +989,27 @@
       
       // Register Service Worker
       registerServiceWorker();
+
+      // PWA shortcut: ./?action=add opens the entry modal directly
+      try {
+        if (new URLSearchParams(location.search).get('action') === 'add') {
+          setTimeout(openModal, 200);
+        }
+      } catch (e) {}
+
+      // Close modals with Escape / backdrop tap
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        ['addModal', 'settingsModal', 'budgetModal', 'deleteModal', 'clearAllModal', 'clearAllFinalModal', 'iosInstallModal']
+          .forEach(id => document.getElementById(id)?.classList.add('hidden'));
+      });
+
+      ['settingsModal', 'budgetModal', 'addModal'].forEach(id => {
+        const el = document.getElementById(id);
+        el?.addEventListener('click', (e) => {
+          if (e.target === el) el.classList.add('hidden');
+        });
+      });
     });
 
     /* ==========================================================================
@@ -749,18 +1054,24 @@
         categoryTotals[item.category] = (categoryTotals[item.category] || 0) + priceNum;
       });
 
-      // Filtered expenses
+      // Filtered expenses (category + instant search + date range)
+      const rangePrefix = getRangePrefix(currentRange);
       const filtered = sorted.filter(item => {
         const matchesCategory = filter === 'All' || item.category === filter;
         const matchesSearch = !search || 
           item.category.toLowerCase().includes(search) || 
           (item.desc && item.desc.toLowerCase().includes(search)) ||
           item.date.includes(search);
-        return matchesCategory && matchesSearch;
+        const matchesRange = !rangePrefix || (item.date || '').startsWith(rangePrefix);
+        return matchesCategory && matchesSearch && matchesRange;
       });
 
+      // Search clear button visibility
+      const searchClearBtn = document.getElementById('searchClearBtn');
+      if (searchClearBtn) searchClearBtn.classList.toggle('hidden', !search);
+
       // Show / hide reset filter button
-      if (filter !== 'All' || search) {
+      if (filter !== 'All' || search || currentRange !== 'all') {
         resetBtn.classList.remove('hidden');
       } else {
         resetBtn.classList.add('hidden');
@@ -789,12 +1100,13 @@
         chronoMap.set(item.id, chronoRunning);
       });
 
-      filtered.forEach((item) => {
+      filtered.forEach((item, rowIndex) => {
         const priceNum = parseFloat(item.price) || 0;
         const itemSum = chronoMap.get(item.id) || priceNum;
 
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50/90 transition border-b border-slate-100 group";
+        tr.className = "hover:bg-slate-50/90 transition border-b border-slate-100 group row-anim";
+        tr.style.animationDelay = Math.min(rowIndex * 18, 220) + 'ms';
         tr.innerHTML = `
           <td class="py-3 px-4 font-mono text-slate-500 text-xs whitespace-nowrap">
             <span class="inline-flex items-center gap-1.5 font-semibold text-slate-700">
@@ -851,6 +1163,10 @@
         document.getElementById('statTopCategoryAmount').innerText = 'Highest spend area';
       }
 
+      // Monthly budget progress bar + range toggle states
+      renderBudgetProgress(monthSpend);
+      renderRangeToggles();
+
       // Render Charts & Legends
       renderCharts(categoryTotals, totalSpend);
 
@@ -868,8 +1184,326 @@
     function resetFilters() {
       document.getElementById('categoryFilter').value = 'All';
       document.getElementById('searchInput').value = '';
+      currentRange = 'all';
       renderExpenses();
     }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      renderExpenses();
+      document.getElementById('searchInput').focus();
+    }
+
+    /* ==========================================================================
+       DATE RANGE QUICK FILTERS (ALL TIME / THIS MONTH / LAST MONTH)
+       ========================================================================== */
+    function getRangePrefix(range) {
+      const now = new Date();
+      if (range === 'this') {
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      }
+      if (range === 'last') {
+        const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    function setDateRange(range) {
+      currentRange = range;
+      haptic(12);
+      renderExpenses();
+    }
+
+    function renderRangeToggles() {
+      document.querySelectorAll('#rangeToggles button').forEach((btn) => {
+        const active = btn.dataset.range === currentRange;
+        btn.className = active
+          ? 'px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap bg-white text-teal-700 shadow-xs font-extrabold'
+          : 'px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap text-slate-500 hover:text-slate-900 font-bold';
+      });
+    }
+
+    /* ==========================================================================
+       MONTHLY BUDGET PROGRESS BAR
+       ========================================================================== */
+    function renderBudgetProgress(monthSpend) {
+      const activeEl = document.getElementById('budgetActive');
+      const emptyEl = document.getElementById('budgetEmpty');
+      const editLabel = document.getElementById('budgetEditLabel');
+      const settingsVal = document.getElementById('settingsBudgetValue');
+      const subtitle = document.getElementById('budgetSubtitle');
+      const iconWrap = document.getElementById('budgetIconWrap');
+
+      if (settingsVal) settingsVal.innerText = monthlyBudget > 0 ? `${formatINR(monthlyBudget)} per month` : 'Not set';
+
+      if (!(monthlyBudget > 0)) {
+        activeEl.classList.add('hidden');
+        emptyEl.classList.remove('hidden');
+        editLabel.innerText = 'Set Budget';
+        iconWrap.className = 'p-2 bg-teal-50 text-teal-600 rounded-xl';
+        subtitle.innerText = "Track this month's spend against your limit";
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      activeEl.classList.remove('hidden');
+      editLabel.innerText = 'Edit';
+
+      const pct = (monthSpend / monthlyBudget) * 100;
+      const pctClamped = Math.max(0, Math.min(100, pct));
+      const remaining = monthlyBudget - monthSpend;
+
+      // Color thresholds: Teal (<75%) · Amber (75-90%) · Red (>90% / exceeded)
+      let barColor = 'bg-teal-500';
+      let textColor = 'text-teal-600';
+      let iconClasses = 'p-2 bg-teal-50 text-teal-600 rounded-xl';
+      let statusIcon = 'check-circle-2';
+      let statusMsg = 'On track — spending is healthy this month.';
+
+      if (pct > 90) {
+        barColor = 'bg-red-500';
+        textColor = 'text-red-600';
+        iconClasses = 'p-2 bg-red-50 text-red-600 rounded-xl';
+        statusIcon = 'alert-octagon';
+        statusMsg = pct >= 100
+          ? `Budget exceeded by ${formatINR(Math.abs(remaining))}!`
+          : 'Critical — over 90% of your budget is used.';
+      } else if (pct >= 75) {
+        barColor = 'bg-amber-500';
+        textColor = 'text-amber-600';
+        iconClasses = 'p-2 bg-amber-50 text-amber-600 rounded-xl';
+        statusIcon = 'alert-triangle';
+        statusMsg = 'Caution — you have used over 75% of your budget.';
+      }
+
+      const fill = document.getElementById('budgetBarFill');
+      fill.className = `budget-bar-fill h-full rounded-full ${barColor}`;
+      fill.style.width = pctClamped + '%';
+
+      iconWrap.className = iconClasses;
+      const monthName = new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+      subtitle.innerText = `${monthName} progress`;
+
+      document.getElementById('budgetSpentText').innerText = formatINR(monthSpend);
+      document.getElementById('budgetOfText').innerText = `of ${formatINR(monthlyBudget)} budget`;
+
+      const pctEl = document.getElementById('budgetPercentText');
+      pctEl.innerText = `${pct.toFixed(pct >= 100 ? 0 : 1)}%`;
+      pctEl.className = `text-lg font-extrabold ${textColor}`;
+
+      document.getElementById('budgetRemainingText').innerText = remaining >= 0
+        ? `${formatINR(remaining)} left`
+        : `${formatINR(Math.abs(remaining))} over`;
+
+      const statusEl = document.getElementById('budgetStatusText');
+      statusEl.className = `text-[11px] font-bold ${textColor} flex items-center gap-1.5`;
+      statusEl.innerHTML = `<i data-lucide="${statusIcon}" class="w-3.5 h-3.5"></i> <span>${escapeHTML(statusMsg)}</span>`;
+    }
+
+    /* ==========================================================================
+       SETTINGS MENU & BUDGET CONTROLS
+       ========================================================================== */
+    function openSettings() {
+      document.getElementById('settingsModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function openBudgetModal() {
+      closeSettings();
+      document.getElementById('inputBudget').value = monthlyBudget > 0 ? monthlyBudget : '';
+      document.getElementById('budgetModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('inputBudget').focus(), 120);
+      lucide.createIcons();
+    }
+
+    function closeBudgetModal() {
+      document.getElementById('budgetModal').classList.add('hidden');
+    }
+
+    function quickBudget(amount) {
+      document.getElementById('inputBudget').value = amount;
+      haptic(12);
+    }
+
+    function saveBudget(e) {
+      e.preventDefault();
+      const raw = document.getElementById('inputBudget').value;
+      const val = parseFloat(raw);
+
+      if (!raw || isNaN(val) || val <= 0) {
+        monthlyBudget = 0;
+        persistBudget();
+        renderExpenses();
+        closeBudgetModal();
+        showToast('Monthly budget removed', 'info');
+        return;
+      }
+
+      monthlyBudget = Number(val.toFixed(2));
+      persistBudget();
+      renderExpenses();
+      closeBudgetModal();
+      haptic([10, 40, 10]);
+      showToast(`Monthly budget set to ${formatINR(monthlyBudget)}`, 'success');
+    }
+
+    /* ==========================================================================
+       JSON BACKUP: EXPORT / IMPORT & RESTORE
+       ========================================================================== */
+    function exportJSON() {
+      const payload = {
+        app: 'Expense Tracker Pro',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        monthlyBudget,
+        expenses
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ExpensePro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      closeSettings();
+      showToast('Backup exported successfully', 'success');
+    }
+
+    function triggerImport() {
+      document.getElementById('importFileInput').click();
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.expenses) ? parsed.expenses : null);
+          if (!list) {
+            showToast('Invalid backup file format', 'error');
+            return;
+          }
+
+          const existingIds = new Set(expenses.map(e => e.id));
+          let added = 0;
+          list.forEach(raw => {
+            const norm = normalizeItem(raw);
+            if (!norm) return;
+            while (existingIds.has(norm.id)) norm.id = norm.id + 1;
+            existingIds.add(norm.id);
+            expenses.push(norm);
+            added++;
+          });
+
+          if (!Array.isArray(parsed) && parsed.monthlyBudget) {
+            const b = parseFloat(parsed.monthlyBudget);
+            if (!isNaN(b) && b > 0) {
+              monthlyBudget = Number(b.toFixed(2));
+              persistBudget();
+            }
+          }
+
+          persistState();
+          renderExpenses();
+          closeSettings();
+          haptic([10, 40, 10]);
+          showToast(added > 0 ? `${added} record(s) restored from backup` : 'No new records found in backup', added > 0 ? 'success' : 'info');
+        } catch (err) {
+          showToast('Could not read backup file', 'error');
+        }
+      };
+      reader.onerror = () => showToast('Could not read backup file', 'error');
+      reader.readAsText(file);
+    }
+
+    /* ==========================================================================
+       PULL-TO-REFRESH (NATIVE MOBILE GESTURE)
+       ========================================================================== */
+    (function initPullToRefresh() {
+      const THRESHOLD = 70;
+      const MAX_PULL = 110;
+      let startY = 0;
+      let pulling = false;
+      let distance = 0;
+
+      function indicator() { return document.getElementById('ptrIndicator'); }
+
+      function reset(snap = true) {
+        const el = indicator();
+        if (!el) return;
+        if (snap) el.classList.add('ptr-snap');
+        el.style.transform = 'translate(-50%, -64px) rotate(0deg)';
+        el.style.opacity = '0';
+        setTimeout(() => el.classList.remove('ptr-snap'), 300);
+      }
+
+      document.addEventListener('touchstart', (e) => {
+        if (window.scrollY > 0 || e.touches.length !== 1) return;
+        if (document.querySelector('.fixed.inset-0:not(.hidden)')) return;
+        startY = e.touches[0].clientY;
+        pulling = true;
+        distance = 0;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!pulling) return;
+        distance = e.touches[0].clientY - startY;
+        if (distance <= 0 || window.scrollY > 0) {
+          pulling = false;
+          reset(false);
+          return;
+        }
+        const eased = Math.min(distance * 0.5, MAX_PULL);
+        const el = indicator();
+        if (!el) return;
+        el.style.opacity = String(Math.min(eased / THRESHOLD, 1));
+        el.style.transform = `translate(-50%, ${eased - 48}px) rotate(${eased * 3}deg)`;
+        if (eased >= THRESHOLD * 0.75 && !el.dataset.armed) {
+          el.dataset.armed = '1';
+          haptic(14);
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => {
+        if (!pulling) return;
+        pulling = false;
+        const el = indicator();
+        const armed = el && el.dataset.armed;
+        if (el) delete el.dataset.armed;
+
+        if (armed && distance * 0.5 >= THRESHOLD * 0.75) {
+          const spinner = document.getElementById('ptrSpinner');
+          if (el) {
+            el.classList.add('ptr-snap');
+            el.style.transform = 'translate(-50%, 18px)';
+            el.style.opacity = '1';
+          }
+          if (spinner) spinner.classList.add('ptr-spinning');
+          haptic([10, 30, 10]);
+
+          Promise.resolve(initStorageEngine()).finally(() => {
+            setTimeout(() => {
+              if (spinner) spinner.classList.remove('ptr-spinning');
+              reset();
+              showToast('Data refreshed', 'success');
+            }, 550);
+          });
+        } else {
+          reset();
+        }
+      }, { passive: true });
+    })();
 
     /* ==========================================================================
        CHART.JS VISUAL ANALYTICS & INSIGHTS
@@ -1196,20 +1830,49 @@
     }
 
     function confirmClearAll() {
+      closeSettings();
       document.getElementById('clearAllModal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeClearAllModal() {
       document.getElementById('clearAllModal').classList.add('hidden');
     }
 
+    // Step 2 of the double confirmation: type DELETE to proceed
+    function openClearAllFinalModal() {
+      closeClearAllModal();
+      const input = document.getElementById('clearConfirmInput');
+      input.value = '';
+      validateClearConfirm();
+      document.getElementById('clearAllFinalModal').classList.remove('hidden');
+      setTimeout(() => input.focus(), 120);
+      haptic([12, 50, 12]);
+      lucide.createIcons();
+    }
+
+    function closeClearAllFinalModal() {
+      document.getElementById('clearAllFinalModal').classList.add('hidden');
+    }
+
+    function validateClearConfirm() {
+      const val = (document.getElementById('clearConfirmInput').value || '').trim().toUpperCase();
+      document.getElementById('finalClearBtn').disabled = val !== 'DELETE';
+    }
+
     async function executeClearAll() {
+      const val = (document.getElementById('clearConfirmInput')?.value || '').trim().toUpperCase();
+      if (val !== 'DELETE') {
+        showToast('Type DELETE to confirm', 'error');
+        return;
+      }
       expenses.forEach(e => addTombstone(e.id));
       expenses = [];
       persistState();
       clearDraft();
       renderExpenses();
-      closeClearAllModal();
+      closeClearAllFinalModal();
+      haptic([20, 60, 20]);
       showToast('All expense records cleared', 'info');
     }
 
@@ -1247,6 +1910,7 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      closeSettings();
       showToast('CSV report downloaded successfully', 'success');
     }
 
