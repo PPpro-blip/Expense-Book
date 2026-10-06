@@ -6,11 +6,16 @@
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
+  "id": "/expense-tracker-pro",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0d9488",
   "theme_color": "#0d9488",
-  "categories": ["finance", "productivity", "utilities"],
+  "categories": [
+    "finance",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "assets/icon-192.png",
@@ -47,6 +52,29 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "short_name": "Add",
+      "description": "Record a new expense instantly",
+      "url": "./?action=add",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

@@ -25,9 +25,30 @@ A feature-complete, Play Store-ready personal and family expense management Prog
   - **IndexedDB Backup:** Secondary persistent storage layer (`ExpenseTrackerDB_v3`) for multi-tier redundancy.
   - **Lifecycle Capture Listeners:** Automatically flushes pending state and form drafts on `visibilitychange`, `freeze`, `pagehide`, and `beforeunload` events using `{ capture: true }`.
   - **Form Draft Auto-Recovery:** Unsaved entry inputs are automatically preserved and restored.
+- **Monthly Budget Goal & Live Progress Bar:**
+  - Set a monthly spending limit (e.g. ₹25,000) from the Settings menu, with one-tap presets.
+  - Dashboard progress bar shows spend vs. target, percentage used, and amount remaining.
+  - Automatic colour thresholds: **Teal** (< 75%), **Amber** (75%–90%), **Red** (> 90% or exceeded, with overspend amount).
+- **Instant Search & Date Range Filters:**
+  - Real-time keyword search across descriptions, categories, and dates with a one-tap clear button.
+  - Quick range toggles: **All Time**, **This Month**, **Last Month** — combinable with the category filter.
+- **Settings Menu & Data Controls:** Set/update the monthly budget, export a full JSON backup, import/restore a JSON backup (duplicate-safe merge), export CSV, and clear all data behind a **double confirmation** (warning dialog + typing `DELETE`).
+- **Native Mobile UX Polish:** Haptic feedback on taps and key actions, pull-to-refresh gesture with animated spinner, staggered row entrance animations, animated progress bar, and Escape/backdrop dismissal for every modal.
+- **100% Offline Service Worker:** App shell, icons, and all CDN dependencies (Tailwind, Lucide, Chart.js, Google Fonts) are pre-cached — navigations fall back to the cached shell, same-origin assets are cache-first, and CDN assets use stale-while-revalidate.
 - **Ledger & Table Tools:** 5-column responsive ledger with live cumulative running totals, date sorting, keyword search, category filtering, single-record editing, and deletion tombstones.
 - **RFC4180 CSV Export:** Export clean expense reports formatted with UTF-8 BOM for Microsoft Excel, Google Sheets, and Numbers.
 - **Indian Rupee (INR / ₹) Formatting:** Full localization with `en-IN` numbering (`₹1,23,456.00`).
+
+---
+
+## Monthly Budget Thresholds
+
+| Usage of monthly budget | Progress bar colour | Status message |
+| --- | --- | --- |
+| Below 75% | Teal | On track — spending is healthy this month |
+| 75% – 90% | Amber | Caution — over 75% of your budget used |
+| Above 90% | Red | Critical — over 90% used |
+| 100% or more | Red | Budget exceeded by ₹X |
 
 ---
 
@@ -72,7 +93,7 @@ Open `http://localhost:8080` in your web browser.
 │   └── apple-touch-icon.png      # iOS home-screen icon
 ├── index.html                    # Single-page application, Chart.js analytics & storage engine
 ├── manifest.json                 # Web App Manifest for PWA installation
-├── sw.js                         # Service Worker for offline app-shell caching
+├── sw.js                         # Service Worker: offline app shell + CDN caching strategies
 ├── README.md
 └── vercel.json                   # Vercel deployment configuration
 ```
