@@ -2,12 +2,12 @@
    Expense Tracker Pro — Service Worker
    100% offline-capable PWA shell:
    - Pre-caches the app shell + icons on install
-   - Pre-caches CDN dependencies (Tailwind, Lucide, Chart.js, Google Fonts)
+   - Pre-caches CDN dependencies (Tailwind, Lucide, Chart.js, Google Fonts, Firebase Auth SDK)
    - Navigations: network-first with offline fallback to cached index.html
    - Same-origin assets: cache-first
    - CDN assets: stale-while-revalidate (instant load, silent refresh online)
    ========================================================================== */
-const CACHE_NAME = 'expense-tracker-pro-v8';
+const CACHE_NAME = 'expense-tracker-pro-v9';
 
 const STATIC_ASSETS = [
   './',
@@ -27,7 +27,11 @@ const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest',
   'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
+  // Firebase compat SDKs — cached so the app boots offline and restores the
+  // signed-in Google session from local persistence without a network round-trip.
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js'
 ];
 
 const CDN_ORIGINS = [
@@ -35,8 +39,12 @@ const CDN_ORIGINS = [
   'https://unpkg.com',
   'https://cdn.jsdelivr.net',
   'https://fonts.googleapis.com',
-  'https://fonts.gstatic.com'
+  'https://fonts.gstatic.com',
+  'https://www.gstatic.com/firebasejs/'
 ];
+
+// Live auth traffic (Google sign-in popup/iframe helpers, identity APIs, profile photos)
+// is intentionally NOT cached — it is cross-origin and falls through to the network.
 
 /* ---------------------------------------------------------------- install */
 self.addEventListener('install', (event) => {
@@ -160,7 +168,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // CDN dependencies (Tailwind / Lucide / Chart.js / Fonts) → SWR.
+  // CDN dependencies (Tailwind / Lucide / Chart.js / Fonts / Firebase SDK) → SWR.
   if (CDN_ORIGINS.some((origin) => request.url.startsWith(origin))) {
     event.respondWith(staleWhileRevalidate(request));
   }

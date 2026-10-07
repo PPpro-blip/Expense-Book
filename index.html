@@ -23,6 +23,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase App and Auth (Compat SDKs for CDN usage) — real Google Sign-In -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -145,19 +149,47 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
         <span id="currentDateBadge" class="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-2 rounded-xl flex items-center gap-1.5 border border-slate-200/60 shadow-xs">
           <i data-lucide="calendar" class="w-3.5 h-3.5 text-teal-600"></i>
           <span></span>
         </span>
 
-        <button id="pwaInstallBtn" onclick="installPWA()" class="hidden bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm cursor-pointer">
-          <i data-lucide="download-cloud" class="w-4 h-4"></i> Install App
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="pwaInstallBtn" onclick="installPWA()" class="hidden bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm cursor-pointer">
+            <i data-lucide="download-cloud" class="w-4 h-4"></i> Install App
+          </button>
 
-        <button onclick="openSettings()" title="App settings" class="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition cursor-pointer tap-pop">
-          <i data-lucide="settings" class="w-4 h-4"></i>
-        </button>
+          <!-- Google account: placeholder while the saved session is being restored -->
+          <span id="authPendingChip" title="Checking sign-in status…" class="w-8 h-8 rounded-full bg-slate-200 animate-pulse flex items-center justify-center"></span>
+
+          <!-- Google account: signed-out state -->
+          <button id="authSignInBtn" type="button" onclick="signInWithGoogle()" title="Sign in with Google"
+            class="hidden bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-xs font-bold pl-2.5 pr-3 py-2 rounded-xl flex items-center gap-2 border border-slate-200 shadow-xs transition cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            <span id="authSignInLabel"><span class="hidden sm:inline">Sign in with Google</span><span class="sm:hidden">Sign in</span></span>
+          </button>
+
+          <!-- Google account: signed-in state (avatar + first name → Account modal) -->
+          <button id="authUserBtn" type="button" onclick="openAccountModal()" title="Your Google account"
+            class="hidden items-center gap-2 pl-1 pr-2 py-1 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 shadow-xs transition cursor-pointer tap-pop flex">
+            <span class="relative w-7 h-7 rounded-full overflow-hidden bg-teal-600 text-white text-[11px] font-black flex items-center justify-center shrink-0">
+              <span id="authAvatarInitials">?</span>
+              <img id="authAvatarImg" alt="" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover hidden" />
+            </span>
+            <span id="authUserName" class="hidden sm:block text-xs font-bold text-slate-700 max-w-[120px] truncate">Account</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+          </button>
+
+          <button onclick="openSettings()" title="App settings" class="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition cursor-pointer tap-pop">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -367,10 +399,13 @@
 
     <!-- 4/5-Column Expense History Table -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-        <div class="flex items-center gap-2">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base">Expense Log & Ledger</h3>
           <span id="filteredCountBadge" class="text-[11px] font-semibold bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full border border-teal-100">0 records</span>
+          <span id="ledgerScopeBadge" title="Expense logs are kept separately per Google account on this device" class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/60">
+            <i data-lucide="user-round" class="w-3 h-3"></i><span id="ledgerScopeLabel">Guest log</span>
+          </span>
         </div>
         <button id="resetFilterBtn" onclick="resetFilters()" class="hidden text-xs text-teal-600 font-bold hover:underline">
           Clear filters
@@ -495,7 +530,7 @@
       </div>
       <div>
         <h4 class="font-bold text-slate-900 text-base">Clear All Expenses?</h4>
-        <p class="text-xs text-slate-500 mt-1">This will erase all recorded expense entries from both LocalStorage and IndexedDB. You will be asked to confirm once more.</p>
+        <p class="text-xs text-slate-500 mt-1">This will erase all recorded expense entries in <strong id="clearAllScopeText" class="text-slate-700">the Guest log</strong> from both LocalStorage and IndexedDB. You will be asked to confirm once more.</p>
       </div>
       <div class="flex gap-2 pt-2">
         <button type="button" onclick="closeClearAllModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold">Cancel</button>
@@ -554,6 +589,16 @@
       </div>
 
       <div class="space-y-2.5">
+        <!-- Google account row (content rendered by renderAuthUI) -->
+        <button id="settingsAccountRow" onclick="handleSettingsAccountClick()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+          <span id="settingsAccountIcon" class="p-2 bg-teal-50 text-teal-600 rounded-lg"><i data-lucide="log-in" class="w-4 h-4"></i></span>
+          <span class="flex-1 min-w-0">
+            <span id="settingsAccountTitle" class="block text-xs font-bold text-slate-800">Sign in with Google</span>
+            <span id="settingsAccountSub" class="block text-[11px] text-slate-400 truncate">Keep a separate expense log for each Google account</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        </button>
+
         <button onclick="openBudgetModal()" class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
           <span class="p-2 bg-teal-50 text-teal-600 rounded-lg"><i data-lucide="target" class="w-4 h-4"></i></span>
           <span class="flex-1">
@@ -601,7 +646,7 @@
       </div>
 
       <div class="pt-1 border-t border-slate-100">
-        <p class="text-[10px] text-slate-400 text-center pt-2.5">Expense Tracker Pro · v2.0 · Offline-ready PWA</p>
+        <p class="text-[10px] text-slate-400 text-center pt-2.5">Expense Tracker Pro · v2.1 · Google Sign-In · Offline-ready PWA</p>
       </div>
     </div>
   </div>
@@ -672,6 +717,79 @@
     </div>
   </div>
 
+  <!-- Google Account Modal (profile, switch account, sign out) -->
+  <div id="accountModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+            <i data-lucide="user-round" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Your Account</h3>
+            <p class="text-[11px] text-slate-400">Signed in with Google</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAccountModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+        <span class="relative w-14 h-14 rounded-full overflow-hidden bg-teal-600 text-white text-lg font-black flex items-center justify-center shrink-0 ring-4 ring-white shadow">
+          <span id="accountAvatarInitials">?</span>
+          <img id="accountAvatarImg" alt="" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover hidden" />
+        </span>
+        <div class="min-w-0">
+          <p id="accountName" class="font-extrabold text-slate-900 text-sm truncate">—</p>
+          <p id="accountEmail" class="text-xs text-slate-500 truncate">—</p>
+          <span class="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-full">
+            <i data-lucide="shield-check" class="w-3 h-3"></i> Google account
+          </span>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-white p-3 text-[11px] text-slate-500 leading-relaxed">
+        <strong class="text-slate-700">Private, per-account log.</strong> Expenses, budget and drafts are stored on this device under your Google account. Signing out switches back to the Guest log — nothing is deleted.
+      </div>
+
+      <button id="accountImportGuestBtn" type="button" onclick="importGuestDataIntoAccount()" class="hidden w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/60 transition text-left cursor-pointer tap-pop">
+        <span class="p-2 bg-purple-50 text-purple-600 rounded-lg"><i data-lucide="folder-input" class="w-4 h-4"></i></span>
+        <span class="flex-1 min-w-0">
+          <span class="block text-xs font-bold text-slate-800">Move Guest log into this account</span>
+          <span id="accountImportGuestHint" class="block text-[11px] text-slate-400 truncate">0 expenses saved on this device as Guest</span>
+        </span>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+      </button>
+
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="switchGoogleAccount()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="users-round" class="w-4 h-4"></i> Switch account
+        </button>
+        <button type="button" onclick="signOutGoogle()" class="w-1/2 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="log-out" class="w-4 h-4"></i> Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- First sign-in on a device that already has Guest data: offer to move it into the account -->
+  <div id="adoptDataModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs hidden flex items-center justify-center p-4 z-[60]">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 modal-enter text-center">
+      <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="folder-input" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-900 text-base">Move Guest data to your account?</h4>
+        <p id="adoptDataText" class="text-xs text-slate-500 mt-1">This device has expenses saved in Guest mode.</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="declineGuestDataAdoption()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold cursor-pointer">Keep separate</button>
+        <button type="button" onclick="acceptGuestDataAdoption()" class="w-1/2 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">Move to my account</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pull-to-Refresh Indicator -->
   <div id="ptrIndicator" class="opacity-0">
     <div class="bg-white shadow-lg border border-slate-200 rounded-full p-2.5 text-teal-600">
@@ -694,6 +812,42 @@
     const DB_NAME = 'ExpenseTrackerDB_v3';
     const DB_VERSION = 1;
     const DB_STORE = 'expenses';
+    const LEGACY_STORAGE_KEYS = ['expense_tracker_master_data', 'expenses_data', 'expense_tracker_master_data_v2'];
+    const ADOPT_PROMPT_KEY = 'expense_tracker_guest_adopt_prompted_v1'; // suffixed per account
+    const AUTH_REDIRECT_FLAG = 'expense_tracker_auth_redirect_pending';
+
+    /* ==========================================================================
+       FIREBASE CONFIGURATION (Google Sign-In via the compat CDN SDKs)
+       This is the public web-app config: it identifies the project, it is not a
+       secret. Access is controlled by Firebase Authentication settings
+       (enabled providers + authorized domains).
+       ========================================================================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9mmNOXWxInLV6gRRTm4S_Ma-q-X6526U",
+      authDomain: "expense-book-f199a.firebaseapp.com",
+      projectId: "expense-book-f199a",
+      storageBucket: "expense-book-f199a.firebasestorage.app",
+      messagingSenderId: "821203805226",
+      appId: "1:821203805226:web:56f170cab1c438a1790f53",
+      measurementId: "G-CB65HFWXPS"
+    };
+
+    /* ==========================================================================
+       PER-ACCOUNT STORAGE SCOPE
+       Every Google account gets its own expense log on this device. The Guest
+       (signed-out) log keeps the original, un-suffixed keys so existing data is
+       untouched; signed-in accounts use "<key>__u_<firebase uid>".
+       ========================================================================== */
+    let activeScope = null;    // null = Guest (device) log · '<uid>' = signed-in Google account
+    let storageReady = false;  // persistState() is a no-op until the active scope has finished loading
+
+    function scopedKey(base, scope = activeScope) {
+      return scope ? `${base}__u_${scope}` : base;
+    }
+
+    function scopedDbName(scope = activeScope) {
+      return scope ? `${DB_NAME}__u_${scope}` : DB_NAME;
+    }
 
     const CATEGORY_MAP = {
       'Groceries': { label: 'Groceries', emoji: '🛒', badge: '🛒 Groceries', color: '#10b981' },
@@ -745,7 +899,7 @@
        ========================================================================== */
     function loadBudget() {
       try {
-        const raw = localStorage.getItem(BUDGET_KEY);
+        const raw = localStorage.getItem(scopedKey(BUDGET_KEY));
         const val = parseFloat(raw);
         monthlyBudget = isNaN(val) || val <= 0 ? 0 : Number(val.toFixed(2));
       } catch (e) {
@@ -756,20 +910,34 @@
 
     function persistBudget() {
       try {
-        if (monthlyBudget > 0) localStorage.setItem(BUDGET_KEY, String(monthlyBudget));
-        else localStorage.removeItem(BUDGET_KEY);
+        if (monthlyBudget > 0) localStorage.setItem(scopedKey(BUDGET_KEY), String(monthlyBudget));
+        else localStorage.removeItem(scopedKey(BUDGET_KEY));
       } catch (e) {}
     }
 
     /* ==========================================================================
        DUAL-LAYER STORAGE ENGINE (SYNCHRONOUS LOCALSTORAGE + ASYNC INDEXEDDB)
+       Every function captures the scope it started with and bails out if the
+       account changed mid-flight, so async IDB work can never cross accounts.
        ========================================================================== */
+    let idbScope = null; // scope the cached idbRef connection belongs to
+
+    function closeIDB() {
+      if (idbRef) {
+        try { idbRef.close(); } catch (e) {}
+      }
+      idbRef = null;
+      idbScope = null;
+    }
+
     function openIDB() {
       return new Promise((resolve) => {
-        if (idbRef) return resolve(idbRef);
+        const scope = activeScope;
+        if (idbRef && idbScope === scope) return resolve(idbRef);
+        closeIDB();
         if (!('indexedDB' in window)) return resolve(null);
         try {
-          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          const req = indexedDB.open(scopedDbName(scope), DB_VERSION);
           req.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(DB_STORE)) {
@@ -777,10 +945,18 @@
             }
           };
           req.onsuccess = (e) => {
-            idbRef = e.target.result;
+            const db = e.target.result;
+            if (scope !== activeScope) {
+              // Account switched while the DB was opening — discard this connection.
+              try { db.close(); } catch (err) {}
+              return resolve(null);
+            }
+            idbRef = db;
+            idbScope = scope;
             resolve(idbRef);
           };
           req.onerror = () => resolve(null);
+          req.onblocked = () => resolve(null);
         } catch (e) {
           resolve(null);
         }
@@ -788,9 +964,10 @@
     }
 
     async function backupToIndexedDB(items) {
+      const scope = activeScope;
       try {
         const db = await openIDB();
-        if (!db) return;
+        if (!db || scope !== activeScope) return;
         const tx = db.transaction(DB_STORE, 'readwrite');
         const store = tx.objectStore(DB_STORE);
         store.clear();
@@ -801,9 +978,10 @@
     }
 
     async function restoreFromIndexedDB() {
+      const scope = activeScope;
       try {
         const db = await openIDB();
-        if (!db) return [];
+        if (!db || scope !== activeScope) return [];
         return new Promise((resolve) => {
           const tx = db.transaction(DB_STORE, 'readonly');
           const store = tx.objectStore(DB_STORE);
@@ -816,32 +994,65 @@
       }
     }
 
-    function getTombstones() {
+    // Wipes the IndexedDB mirror of a specific scope (used when the Guest log is moved into an account).
+    function clearIndexedDBForScope(scope) {
+      return new Promise((resolve) => {
+        if (!('indexedDB' in window)) return resolve();
+        try {
+          const req = indexedDB.open(scopedDbName(scope), DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: 'id' });
+          };
+          req.onsuccess = (e) => {
+            const db = e.target.result;
+            try {
+              const tx = db.transaction(DB_STORE, 'readwrite');
+              tx.objectStore(DB_STORE).clear();
+              tx.oncomplete = () => { try { db.close(); } catch (err) {} resolve(); };
+              tx.onerror = () => { try { db.close(); } catch (err) {} resolve(); };
+            } catch (err) {
+              try { db.close(); } catch (e2) {}
+              resolve();
+            }
+          };
+          req.onerror = () => resolve();
+          req.onblocked = () => resolve();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+
+    function getTombstones(scope = activeScope) {
       try {
-        const raw = localStorage.getItem(TOMBSTONE_KEY);
+        const raw = localStorage.getItem(scopedKey(TOMBSTONE_KEY, scope));
         return raw ? JSON.parse(raw) : [];
       } catch (e) {
         return [];
       }
     }
 
-    function addTombstone(id) {
+    function addTombstone(id, scope = activeScope) {
       try {
-        const list = getTombstones();
+        const list = getTombstones(scope);
         list.push(id);
-        localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(list.slice(-200)));
+        localStorage.setItem(scopedKey(TOMBSTONE_KEY, scope), JSON.stringify(list.slice(-200)));
       } catch (e) {}
     }
 
     function persistState() {
+      // Never write before the active account's log has been loaded (prevents an
+      // early lifecycle event from overwriting a log with an empty/foreign array).
+      if (!storageReady) return Promise.resolve();
       // 1. Synchronous blocking write to localStorage
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        localStorage.setItem(scopedKey(STORAGE_KEY), JSON.stringify(expenses));
       } catch (e) {
         console.error('LocalStorage write failed:', e);
       }
       // 2. Secondary backup to IndexedDB
-      backupToIndexedDB(expenses);
+      return backupToIndexedDB(expenses);
     }
 
     function normalizeCategory(cat) {
@@ -863,22 +1074,22 @@
     }
 
     async function initStorageEngine() {
+      const scope = activeScope; // bail out if the account changes while loading
       let loaded = [];
-      const tombstones = new Set(getTombstones());
+      const tombstones = new Set(getTombstones(scope));
 
       // Attempt reading primary key
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(scopedKey(STORAGE_KEY, scope));
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) loaded = parsed;
         }
       } catch (e) {}
 
-      // Attempt migration from older local keys if empty
-      if (loaded.length === 0) {
-        const legacyKeys = ['expense_tracker_master_data', 'expenses_data', 'expense_tracker_master_data_v2'];
-        for (const k of legacyKeys) {
+      // Attempt migration from older local keys if empty (Guest log only — those keys pre-date accounts)
+      if (loaded.length === 0 && !scope) {
+        for (const k of LEGACY_STORAGE_KEYS) {
           try {
             const rawLegacy = localStorage.getItem(k);
             if (rawLegacy) {
@@ -895,6 +1106,7 @@
       // If still empty, check secondary store (IndexedDB)
       if (loaded.length === 0) {
         const idbData = await restoreFromIndexedDB();
+        if (scope !== activeScope) return; // account switched mid-load — a newer load owns the state now
         if (Array.isArray(idbData) && idbData.length > 0) {
           loaded = idbData;
         }
@@ -912,8 +1124,42 @@
       });
 
       expenses = clean;
+      storageReady = true;
       persistState();
       renderExpenses();
+    }
+
+    /* ==========================================================================
+       ACCOUNT SCOPE SWITCHING (Guest ⇄ Google account)
+       Flushes the outgoing log, locks persistence, swaps the key namespace, then
+       loads the incoming log. Switches are queued so they can never interleave.
+       ========================================================================== */
+    let scopeSwitchChain = Promise.resolve();
+
+    function activateStorageScope(scope) {
+      const next = scope || null;
+      scopeSwitchChain = scopeSwitchChain
+        .then(async () => {
+          if (storageReady) {
+            // Flush the outgoing account's log (both layers) before the namespace changes.
+            flushActiveDraft();
+            await persistState();
+          }
+          storageReady = false;
+          activeScope = next;
+          expenses = [];
+          pendingDeleteId = null;
+          closeIDB();
+          loadBudget();
+          await initStorageEngine(); // loads, marks storageReady, persists & renders
+          renderAuthUI();
+        })
+        .catch((err) => {
+          console.error('Account scope switch failed:', err);
+          storageReady = true;
+          renderExpenses();
+        });
+      return scopeSwitchChain;
     }
 
     // Active field and draft flush
@@ -927,20 +1173,20 @@
       // If modal is open and has input, save draft
       if (!editId && (desc || price)) {
         try {
-          localStorage.setItem(DRAFT_KEY, JSON.stringify({ date, category, desc, price }));
+          localStorage.setItem(scopedKey(DRAFT_KEY), JSON.stringify({ date, category, desc, price }));
         } catch (e) {}
       }
     }
 
     function clearDraft() {
       try {
-        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(scopedKey(DRAFT_KEY));
       } catch (e) {}
     }
 
     function restoreDraftIfAny() {
       try {
-        const draftRaw = localStorage.getItem(DRAFT_KEY);
+        const draftRaw = localStorage.getItem(scopedKey(DRAFT_KEY));
         if (draftRaw) {
           const draft = JSON.parse(draftRaw);
           if (draft.date) document.getElementById('inputDate').value = draft.date;
@@ -972,8 +1218,6 @@
        INITIALIZATION
        ========================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
-      loadBudget();
-      initStorageEngine();
       renderRangeToggles();
       
       // Set today's date
@@ -1000,17 +1244,471 @@
       // Close modals with Escape / backdrop tap
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
-        ['addModal', 'settingsModal', 'budgetModal', 'deleteModal', 'clearAllModal', 'clearAllFinalModal', 'iosInstallModal']
+        ['addModal', 'settingsModal', 'budgetModal', 'deleteModal', 'clearAllModal', 'clearAllFinalModal', 'iosInstallModal', 'accountModal']
           .forEach(id => document.getElementById(id)?.classList.add('hidden'));
       });
 
-      ['settingsModal', 'budgetModal', 'addModal'].forEach(id => {
+      ['settingsModal', 'budgetModal', 'addModal', 'accountModal'].forEach(id => {
         const el = document.getElementById(id);
         el?.addEventListener('click', (e) => {
           if (e.target === el) el.classList.add('hidden');
         });
       });
+
+      // Google Sign-In: resolve the active account first, then load that account's
+      // ledger (or the Guest log). Falls back to Guest mode if the SDK is unavailable.
+      initAuth();
     });
+
+    /* ==========================================================================
+       GOOGLE SIGN-IN (FIREBASE AUTHENTICATION — COMPAT CDN SDK)
+       Popup first (works everywhere, including browsers that partition
+       third-party storage); redirect only as a fallback when popups are blocked
+       or inside iOS home-screen apps, where popups cannot complete.
+       ========================================================================== */
+    let firebaseAuth = null;
+    let currentUser = null;        // firebase.User | null
+    let authAvailable = false;     // SDK loaded & initialised
+    let authResolved = false;      // first onAuthStateChanged (or fallback) has fired
+    let authFallbackTimer = null;
+    let signInInProgress = false;
+    let signInIntent = false;      // user explicitly tapped "Sign in" → show a welcome toast
+
+    function initAuth() {
+      const sdkReady = typeof firebase !== 'undefined' && firebase && typeof firebase.initializeApp === 'function' && typeof firebase.auth === 'function';
+      if (!sdkReady) {
+        console.warn('Firebase SDK unavailable (offline or blocked) — continuing in Guest mode.');
+        return enterGuestOnlyMode();
+      }
+
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        firebaseAuth = firebase.auth();
+        try { firebaseAuth.useDeviceLanguage(); } catch (e) {}
+        authAvailable = true;
+      } catch (err) {
+        console.warn('Firebase initialisation failed — continuing in Guest mode.', err);
+        return enterGuestOnlyMode();
+      }
+
+      renderAuthUI();
+
+      // Returning from a redirect-based sign-in? Surface the result (or its error).
+      try {
+        if (sessionStorage.getItem(AUTH_REDIRECT_FLAG) === '1') signInIntent = true;
+        sessionStorage.removeItem(AUTH_REDIRECT_FLAG);
+      } catch (e) {}
+      firebaseAuth.getRedirectResult().catch((err) => handleAuthError(err));
+
+      // Fires immediately with the persisted session (also offline), then on every sign-in / sign-out.
+      firebaseAuth.onAuthStateChanged((user) => handleAuthStateChanged(user));
+
+      // Safety net: never leave the ledger blank if the auth state cannot be determined.
+      authFallbackTimer = setTimeout(() => {
+        if (!authResolved) {
+          console.warn('Auth state did not resolve in time — loading the Guest log.');
+          handleAuthStateChanged(null);
+        }
+      }, 4000);
+    }
+
+    function enterGuestOnlyMode() {
+      authAvailable = false;
+      authResolved = true;
+      currentUser = null;
+      renderAuthUI();
+      return activateStorageScope(null);
+    }
+
+    function handleAuthStateChanged(user) {
+      clearTimeout(authFallbackTimer);
+      const firstResolve = !authResolved;
+      authResolved = true;
+
+      const prevUid = currentUser ? currentUser.uid : null;
+      const nextUid = user ? user.uid : null;
+      currentUser = user || null;
+      signInInProgress = false;
+      renderAuthUI();
+
+      // Same account as before (e.g. profile refresh) → nothing to reload.
+      if (!firstResolve && prevUid === nextUid) return;
+
+      activateStorageScope(nextUid).then(() => {
+        if (user) {
+          if (signInIntent) {
+            haptic([10, 40, 10]);
+            showToast(`Signed in as ${displayNameOf(user)}`, 'success');
+          }
+          maybeOfferGuestDataAdoption(user);
+        } else if (!firstResolve) {
+          showToast('Signed out — showing the Guest log on this device', 'info');
+        }
+        signInIntent = false;
+      });
+    }
+
+    function prefersRedirectSignIn() {
+      // iOS home-screen (standalone) web apps cannot complete popup flows → go straight to redirect.
+      const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      return standalone && isIOS;
+    }
+
+    function startRedirectSignIn(provider) {
+      try { sessionStorage.setItem(AUTH_REDIRECT_FLAG, '1'); } catch (e) {}
+      flushActiveDraft();
+      persistState();
+      return firebaseAuth.signInWithRedirect(provider);
+    }
+
+    async function signInWithGoogle(options = {}) {
+      if (!authAvailable || !firebaseAuth) {
+        showToast('Google sign-in is unavailable right now — check your connection and reload the app', 'error', 5000);
+        return;
+      }
+      if (currentUser && !options.switchAccount) { openAccountModal(); return; }
+      if (signInInProgress) return;
+      if (navigator.onLine === false) {
+        showToast('You are offline — connect to the internet to sign in with Google', 'error', 5000);
+        return;
+      }
+
+      closeSettings();
+      signInInProgress = true;
+      signInIntent = true;
+      renderAuthUI();
+      haptic(12);
+
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' }); // family devices: always show the account chooser
+
+      try {
+        if (prefersRedirectSignIn()) {
+          await startRedirectSignIn(provider);
+          return; // page navigates away; onAuthStateChanged completes the flow after the redirect
+        }
+        await firebaseAuth.signInWithPopup(provider);
+        // Success → onAuthStateChanged switches the ledger and shows the welcome toast.
+      } catch (err) {
+        const code = err && err.code;
+        if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+          try {
+            await startRedirectSignIn(provider);
+            return;
+          } catch (redirectErr) {
+            handleAuthError(redirectErr);
+          }
+        } else {
+          handleAuthError(err);
+        }
+      } finally {
+        signInInProgress = false;
+        renderAuthUI();
+      }
+    }
+
+    function switchGoogleAccount() {
+      closeAccountModal();
+      // Google's account chooser (prompt=select_account) replaces the current session with the picked account.
+      signInWithGoogle({ switchAccount: true });
+    }
+
+    async function signOutGoogle() {
+      if (!firebaseAuth) return;
+      closeAccountModal();
+      try {
+        flushActiveDraft();
+        await persistState(); // make sure this account's log is fully flushed first
+        await firebaseAuth.signOut(); // → onAuthStateChanged(null) switches back to the Guest log
+      } catch (err) {
+        handleAuthError(err);
+      }
+    }
+
+    function handleAuthError(err) {
+      const code = (err && err.code) || '';
+      console.warn('Google sign-in error:', code, err);
+      signInIntent = false;
+
+      if (['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'].includes(code)) {
+        showToast('Sign-in cancelled', 'info');
+        return;
+      }
+
+      const messages = {
+        'auth/network-request-failed': 'Network error — check your connection and try again.',
+        'auth/unauthorized-domain': `${location.hostname} is not an authorised domain. Add it in Firebase Console → Authentication → Settings → Authorized domains.`,
+        'auth/operation-not-allowed': 'Google sign-in is not enabled for this Firebase project (Authentication → Sign-in method → Google).',
+        'auth/popup-blocked': 'The sign-in popup was blocked — allow popups for this site and try again.',
+        'auth/web-storage-unsupported': 'Your browser blocks site storage — enable cookies/site data to sign in.',
+        'auth/too-many-requests': 'Too many attempts — please wait a moment and try again.',
+        'auth/user-disabled': 'This Google account has been disabled for this app.',
+        'auth/internal-error': 'Google sign-in hit an internal error — please try again.'
+      };
+      const message = messages[code] || `Sign-in failed: ${(err && err.message) || 'unknown error'}`;
+      showToast(message, 'error', 6500);
+    }
+
+    /* --------------------------------------------------------------------------
+       Profile helpers & UI rendering
+       -------------------------------------------------------------------------- */
+    function displayNameOf(user) {
+      if (!user) return 'Guest';
+      const name = (user.displayName || '').trim();
+      if (name) return name;
+      if (user.email) return user.email.split('@')[0];
+      return 'Google user';
+    }
+
+    function firstNameOf(user) {
+      return displayNameOf(user).split(/\s+/)[0];
+    }
+
+    function initialsOf(user) {
+      const parts = displayNameOf(user).split(/\s+/).filter(Boolean).slice(0, 2);
+      const initials = parts.map(p => p[0]).join('').toUpperCase();
+      return initials || 'G';
+    }
+
+    function avatarUrlOf(user) {
+      const url = user && user.photoURL;
+      if (!url || !/^https:\/\//i.test(url)) return '';
+      return url.replace(/=s\d+(-c)?$/, '=s160-c'); // request a sharper Google profile image
+    }
+
+    function setAvatar(imgEl, initialsEl, user) {
+      if (!imgEl || !initialsEl) return;
+      initialsEl.textContent = initialsOf(user);
+      const url = avatarUrlOf(user);
+      if (!url) {
+        imgEl.removeAttribute('src');
+        imgEl.classList.add('hidden');
+        return;
+      }
+      imgEl.onload = () => imgEl.classList.remove('hidden');
+      imgEl.onerror = () => imgEl.classList.add('hidden'); // initials stay visible underneath
+      if (imgEl.getAttribute('src') !== url) {
+        imgEl.classList.add('hidden');
+        imgEl.src = url;
+      } else if (imgEl.complete && imgEl.naturalWidth > 0) {
+        imgEl.classList.remove('hidden');
+      }
+    }
+
+    function guestDataSnapshot() {
+      // Reads the Guest log directly from storage (never from the in-memory state).
+      let list = [];
+      try {
+        const raw = localStorage.getItem(scopedKey(STORAGE_KEY, null));
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed)) list = parsed.map(normalizeItem).filter(Boolean);
+      } catch (e) {}
+      let budget = 0;
+      try {
+        const b = parseFloat(localStorage.getItem(scopedKey(BUDGET_KEY, null)));
+        if (!isNaN(b) && b > 0) budget = Number(b.toFixed(2));
+      } catch (e) {}
+      return { list, budget };
+    }
+
+    function renderAuthUI() {
+      const user = currentUser;
+      const signedIn = !!user;
+
+      // Header controls
+      const pending = document.getElementById('authPendingChip');
+      const signInBtn = document.getElementById('authSignInBtn');
+      const userBtn = document.getElementById('authUserBtn');
+      if (pending) pending.classList.toggle('hidden', authResolved);
+      if (signInBtn) {
+        signInBtn.classList.toggle('hidden', !authResolved || signedIn);
+        signInBtn.disabled = signInInProgress;
+        signInBtn.classList.toggle('opacity-60', !authAvailable);
+        signInBtn.title = authAvailable ? 'Sign in with Google' : 'Google sign-in unavailable (offline?)';
+        const label = document.getElementById('authSignInLabel');
+        if (label) {
+          label.innerHTML = signInInProgress
+            ? 'Signing in…'
+            : '<span class="hidden sm:inline">Sign in with Google</span><span class="sm:hidden">Sign in</span>';
+        }
+      }
+      if (userBtn) {
+        userBtn.classList.toggle('hidden', !authResolved || !signedIn);
+        if (signedIn) {
+          const nameEl = document.getElementById('authUserName');
+          if (nameEl) nameEl.textContent = firstNameOf(user);
+          setAvatar(document.getElementById('authAvatarImg'), document.getElementById('authAvatarInitials'), user);
+        }
+      }
+
+      // Ledger scope badge
+      const scopeLabel = document.getElementById('ledgerScopeLabel');
+      if (scopeLabel) scopeLabel.textContent = signedIn ? `${firstNameOf(user)}'s log` : 'Guest log';
+
+      // Clear-all modal copy
+      const clearScope = document.getElementById('clearAllScopeText');
+      if (clearScope) clearScope.textContent = signedIn ? `${firstNameOf(user)}'s account log` : 'the Guest log';
+
+      // Settings → Account row
+      const rowIcon = document.getElementById('settingsAccountIcon');
+      const rowTitle = document.getElementById('settingsAccountTitle');
+      const rowSub = document.getElementById('settingsAccountSub');
+      if (rowIcon && rowTitle && rowSub) {
+        if (signedIn) {
+          const url = avatarUrlOf(user);
+          rowIcon.className = 'rounded-lg';
+          rowIcon.innerHTML = `
+            <span class="relative w-8 h-8 rounded-full overflow-hidden bg-teal-600 text-white text-[11px] font-black flex items-center justify-center">
+              <span>${escapeHTML(initialsOf(user))}</span>
+              ${url ? `<img src="${escapeHTML(url)}" alt="" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()" />` : ''}
+            </span>`;
+          rowTitle.textContent = displayNameOf(user);
+          rowSub.textContent = user.email || 'Google account · tap to manage';
+        } else {
+          rowIcon.className = 'p-2 bg-teal-50 text-teal-600 rounded-lg';
+          rowIcon.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i>';
+          rowTitle.textContent = 'Sign in with Google';
+          rowSub.textContent = authAvailable
+            ? 'Keep a separate expense log for each Google account'
+            : 'Unavailable right now (offline?) — using the Guest log';
+        }
+      }
+
+      // Account modal
+      if (signedIn) {
+        const nameEl = document.getElementById('accountName');
+        const emailEl = document.getElementById('accountEmail');
+        if (nameEl) nameEl.textContent = displayNameOf(user);
+        if (emailEl) emailEl.textContent = user.email || '';
+        setAvatar(document.getElementById('accountAvatarImg'), document.getElementById('accountAvatarInitials'), user);
+
+        const importBtn = document.getElementById('accountImportGuestBtn');
+        const importHint = document.getElementById('accountImportGuestHint');
+        if (importBtn && importHint) {
+          const guest = guestDataSnapshot();
+          const hasGuestData = guest.list.length > 0 || guest.budget > 0;
+          importBtn.classList.toggle('hidden', !hasGuestData || activeScope !== user.uid);
+          importHint.textContent = `${guest.list.length} expense${guest.list.length === 1 ? '' : 's'}${guest.budget > 0 ? ' + monthly budget' : ''} saved on this device as Guest`;
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    function openAccountModal() {
+      if (!currentUser) { signInWithGoogle(); return; }
+      renderAuthUI();
+      document.getElementById('accountModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAccountModal() {
+      document.getElementById('accountModal').classList.add('hidden');
+    }
+
+    function handleSettingsAccountClick() {
+      closeSettings();
+      if (currentUser) openAccountModal();
+      else signInWithGoogle();
+    }
+
+    /* --------------------------------------------------------------------------
+       Guest log → account adoption
+       First time an account signs in on a device that already holds Guest data,
+       offer (once) to move that data into the account's own log.
+       -------------------------------------------------------------------------- */
+    function adoptFlagKey(uid) {
+      return `${ADOPT_PROMPT_KEY}__u_${uid}`;
+    }
+
+    function markAdoptPrompted(uid) {
+      try { localStorage.setItem(adoptFlagKey(uid), '1'); } catch (e) {}
+    }
+
+    function maybeOfferGuestDataAdoption(user) {
+      if (!user || activeScope !== user.uid || !storageReady) return;
+      try { if (localStorage.getItem(adoptFlagKey(user.uid))) return; } catch (e) {}
+
+      if (expenses.length > 0) {
+        // The account already has its own log on this device — no need to ask.
+        markAdoptPrompted(user.uid);
+        return;
+      }
+
+      const guest = guestDataSnapshot();
+      if (guest.list.length === 0 && !(guest.budget > 0)) return; // nothing to adopt (yet)
+
+      const count = guest.list.length;
+      const parts = [];
+      if (count > 0) parts.push(`<strong class="text-slate-700">${count} expense${count === 1 ? '' : 's'}</strong>`);
+      if (guest.budget > 0) parts.push(`a monthly budget of <strong class="text-slate-700">${formatINR(guest.budget)}</strong>`);
+      document.getElementById('adoptDataText').innerHTML =
+        `This device has ${parts.join(' and ')} saved in Guest mode. Move them into <strong class="text-slate-700">${escapeHTML(firstNameOf(user))}'s</strong> account log? The Guest log will be empty afterwards — nothing is deleted, it just moves.`;
+
+      document.getElementById('adoptDataModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAdoptModal() {
+      document.getElementById('adoptDataModal').classList.add('hidden');
+    }
+
+    function declineGuestDataAdoption() {
+      closeAdoptModal();
+      if (currentUser) markAdoptPrompted(currentUser.uid);
+      showToast('Kept separate — the Guest log is still there when you sign out', 'info', 4500);
+    }
+
+    function acceptGuestDataAdoption() {
+      closeAdoptModal();
+      if (currentUser) markAdoptPrompted(currentUser.uid);
+      importGuestDataIntoAccount();
+    }
+
+    async function importGuestDataIntoAccount() {
+      const user = currentUser;
+      if (!user || activeScope !== user.uid || !storageReady) return;
+
+      const guest = guestDataSnapshot();
+      if (guest.list.length === 0 && !(guest.budget > 0)) {
+        showToast('No Guest data found on this device', 'info');
+        return;
+      }
+
+      // Merge into the account log (duplicate-safe ids, same approach as JSON import).
+      const originalGuestIds = guest.list.map(item => item.id);
+      const existingIds = new Set(expenses.map(e => e.id));
+      let moved = 0;
+      guest.list.forEach(item => {
+        while (existingIds.has(item.id)) item.id += 1;
+        existingIds.add(item.id);
+        expenses.push(item);
+        moved++;
+      });
+      if (!(monthlyBudget > 0) && guest.budget > 0) {
+        monthlyBudget = guest.budget;
+        persistBudget();
+      }
+      await persistState();
+
+      // Empty the Guest log so nothing is duplicated: primary key, legacy keys, budget,
+      // draft, the IndexedDB mirror, and tombstones as a belt-and-braces guard.
+      try {
+        localStorage.removeItem(scopedKey(STORAGE_KEY, null));
+        localStorage.removeItem(scopedKey(BUDGET_KEY, null));
+        localStorage.removeItem(scopedKey(DRAFT_KEY, null));
+        LEGACY_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+      } catch (e) {}
+      originalGuestIds.forEach(id => addTombstone(id, null));
+      await clearIndexedDBForScope(null);
+
+      renderExpenses();
+      renderAuthUI();
+      closeAccountModal();
+      haptic([10, 40, 10]);
+      showToast(`${moved} expense${moved === 1 ? '' : 's'} moved into ${firstNameOf(user)}'s log`, 'success');
+    }
 
     /* ==========================================================================
        RENDERING & UI LOGIC
@@ -1360,6 +2058,9 @@
         app: 'Expense Tracker Pro',
         version: 2,
         exportedAt: new Date().toISOString(),
+        account: currentUser
+          ? { provider: 'google', name: displayNameOf(currentUser), email: currentUser.email || '' }
+          : 'guest',
         monthlyBudget,
         expenses
       };
@@ -1965,7 +2666,7 @@
     /* ==========================================================================
        TOAST NOTIFICATION FEEDBACK
        ========================================================================== */
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'info', duration = 3000) {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       
@@ -1995,7 +2696,7 @@
         toast.style.transform = 'translateY(10px)';
         toast.style.transition = 'all 0.25s ease-out';
         setTimeout(() => toast.remove(), 250);
-      }, 3000);
+      }, Math.max(1500, duration));
     }
   </script>
 </body>
