@@ -35,6 +35,15 @@ A feature-complete, Play Store-ready personal and family expense management Prog
   - Set a monthly spending limit (e.g. ₹25,000) from the Settings menu, with one-tap presets.
   - Dashboard progress bar shows spend vs. target, percentage used, and amount remaining.
   - Automatic colour thresholds: **Teal** (< 75%), **Amber** (75%–90%), **Red** (> 90% or exceeded, with overspend amount).
+- **Clickable Summary Cards:** all four dashboard metric cards are live controls — hover to reveal the action hint, then click to drill in:
+  | Card | Hover hint | Click action |
+  | --- | --- | --- |
+  | **Grand Total** | View all-time data ➔ | Opens the **All-Time Financial Summary** (total, entries, active months, average per entry/month, top category) with a jump to the analytics charts |
+  | **Entries** | Manage transactions ➔ | Clears every filter and scrolls to the full ledger |
+  | **This Month** | View monthly breakdown ➔ | Filters the ledger to the current month and opens the **week-by-week** breakdown with budget status |
+  | **Top Category** | Filter by category ➔ | Filters the ledger to that category (click again to toggle it off) |
+
+  Every card reads the Firestore-backed ledger defensively and falls back to an *"Add your first expense to unlock insights!"* toast when there is nothing to show yet.
 - **Instant Search & Date Range Filters:**
   - Real-time keyword search across descriptions, categories, and dates with a one-tap clear button.
   - Quick range toggles: **All Time**, **This Month**, **Last Month** — combinable with the category filter.
@@ -55,6 +64,24 @@ A feature-complete, Play Store-ready personal and family expense management Prog
 | 75% – 90% | Amber | Caution — over 75% of your budget used |
 | Above 90% | Red | Critical — over 90% used |
 | 100% or more | Red | Budget exceeded by ₹X |
+
+---
+
+## Summary Card Interaction States
+
+The metric cards are real `<button>` elements, so they are keyboard-reachable (Tab + Enter/Space) and screen-reader labelled. Their visual states live in `.stat-card` in `index.html`:
+
+| State | Effect |
+| --- | --- |
+| Idle | Static card, `cursor: pointer`, caption line visible |
+| Hover | Lifts `-4px` with a `scale(1.025)` zoom and a deeper shadow; the caption slides up and the action hint slides in |
+| Focus-visible | Same lift plus a teal focus ring |
+| Active (press) | Compresses to `scale(0.97)` with a short `0.09s` transition for a tactile press |
+| Section jump | The target section plays a one-shot `card-pulse` teal ring so it is obvious where the click landed |
+
+Hover effects are wrapped in `@media (hover: hover)` so touch devices never get a "stuck" lifted card, and everything collapses under `prefers-reduced-motion: reduce`.
+
+Each handler starts with `sanitizeExpenseLedger()`, which drops any entry the storage engine's own `normalizeItem()` would reject (null records, non-numeric or non-positive amounts, duplicate ids) before the ledger reaches the render pipeline — so a partially-applied cloud snapshot can never break a click.
 
 ---
 
