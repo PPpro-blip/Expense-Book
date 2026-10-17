@@ -131,6 +131,106 @@
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* ==========================================================================
+       Interactive Dashboard Summary Cards
+       The four metric cards are real <button> elements: they lift on hover,
+       depress on press, and expose a keyboard-visible focus ring.
+       ========================================================================== */
+    .stat-card {
+      cursor: pointer;
+      transform: translateZ(0);
+      transition:
+        transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.28s ease;
+      will-change: transform;
+    }
+
+    /* Hover lift only where a real pointer exists — keeps touch devices from
+       getting a "stuck" lifted card after a tap. */
+    @media (hover: hover) and (pointer: fine) {
+      .stat-card:hover {
+        transform: translateY(-4px) scale(1.025);
+        box-shadow: 0 16px 32px -12px rgba(15, 23, 42, 0.28);
+        border-color: rgba(13, 148, 136, 0.35);
+      }
+    }
+
+    .stat-card:focus-visible {
+      outline: none;
+      transform: translateY(-4px) scale(1.025);
+      box-shadow:
+        0 0 0 3px rgba(13, 148, 136, 0.45),
+        0 16px 32px -12px rgba(15, 23, 42, 0.28);
+    }
+
+    .stat-card:active {
+      transform: translateY(0) scale(0.97);
+      box-shadow: 0 4px 10px -6px rgba(15, 23, 42, 0.3);
+      transition-duration: 0.09s;
+    }
+
+    /* Card caption ⇄ action hint swap (no layout shift: fixed 14px slot) */
+    .stat-card-slot {
+      position: relative;
+      display: block;
+      height: 14px;
+      overflow: hidden;
+    }
+    .stat-card-caption,
+    .stat-card-hint {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      display: block;
+      line-height: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+    }
+    .stat-card-hint {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    .stat-card:hover .stat-card-caption,
+    .stat-card:focus-visible .stat-card-caption {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    .stat-card:hover .stat-card-hint,
+    .stat-card:focus-visible .stat-card-hint {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* One-shot ring pulse marking the section a card jumped to */
+    .card-pulse {
+      animation: cardPulse 1.2s cubic-bezier(0.16, 1, 0.3, 1) 2;
+    }
+    @keyframes cardPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.55); }
+      70%  { box-shadow: 0 0 0 14px rgba(13, 148, 136, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stat-card,
+      .stat-card-caption,
+      .stat-card-hint {
+        transition-duration: 0.01ms;
+      }
+      .stat-card:hover,
+      .stat-card:focus-visible,
+      .stat-card:active {
+        transform: none;
+      }
+      .card-pulse {
+        animation: none;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen pb-24 md:pb-12 text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
@@ -194,61 +294,81 @@
       </div>
     </header>
 
-    <!-- Top Summary Metrics Cards (4-Card Grid) -->
+    <!-- Top Summary Metrics Cards (4-Card Grid) — every card is clickable -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-      <!-- Grand Total -->
-      <div class="bg-gradient-to-br from-teal-700 to-teal-800 text-white p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <!-- Grand Total → All-Time Financial Summary -->
+      <button type="button" id="cardGrandTotal" onclick="openAllTimeSummary()"
+        title="View all-time data" aria-label="Grand total — open the all-time financial summary"
+        class="stat-card group bg-gradient-to-br from-teal-700 to-teal-800 text-white p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between w-full text-left">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[11px] font-bold tracking-wider uppercase opacity-85">Grand Total</span>
-          <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full text-white">INR</span>
+          <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full text-white transition-transform duration-300 group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5">INR</span>
         </div>
         <div>
-          <p id="statGrandTotal" class="text-2xl sm:text-3xl font-extrabold tracking-tight">₹0.00</p>
-          <p class="text-[10px] text-teal-100 font-medium mt-0.5">All-time tracked spend</p>
+          <span id="statGrandTotal" class="block text-2xl sm:text-3xl font-extrabold tracking-tight">₹0.00</span>
+          <span class="stat-card-slot mt-0.5">
+            <span class="stat-card-caption text-[10px] text-teal-100 font-medium">All-time tracked spend</span>
+            <span class="stat-card-hint text-[10px] text-white font-extrabold">View all-time data &#10132;</span>
+          </span>
         </div>
-      </div>
+      </button>
 
-      <!-- Total Entries -->
-      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+      <!-- Total Entries → full transaction ledger -->
+      <button type="button" id="cardEntries" onclick="openTransactionLedger()"
+        title="Manage transactions" aria-label="Entries — show every logged transaction"
+        class="stat-card group bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between w-full text-left">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Entries</span>
-          <div class="p-1.5 bg-slate-100 text-slate-600 rounded-lg">
+          <div class="p-1.5 bg-slate-100 text-slate-600 rounded-lg transition-colors duration-300 group-hover:bg-teal-50 group-hover:text-teal-600 group-focus-visible:bg-teal-50 group-focus-visible:text-teal-600">
             <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
         </div>
         <div>
-          <p id="statEntries" class="text-2xl sm:text-3xl font-extrabold text-slate-800">0</p>
-          <p class="text-[10px] text-slate-400 font-medium mt-0.5">Logged transactions</p>
+          <span id="statEntries" class="block text-2xl sm:text-3xl font-extrabold text-slate-800">0</span>
+          <span class="stat-card-slot mt-0.5">
+            <span class="stat-card-caption text-[10px] text-slate-400 font-medium">Logged transactions</span>
+            <span class="stat-card-hint text-[10px] text-teal-600 font-extrabold">Manage transactions &#10132;</span>
+          </span>
         </div>
-      </div>
+      </button>
 
-      <!-- This Month -->
-      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+      <!-- This Month → week-by-week breakdown -->
+      <button type="button" id="cardMonth" onclick="openMonthlyBreakdown()"
+        title="View monthly breakdown" aria-label="This month — open the week-by-week spending breakdown"
+        class="stat-card group bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between w-full text-left">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">This Month</span>
-          <div class="p-1.5 bg-amber-50 text-amber-500 rounded-lg">
+          <div class="p-1.5 bg-amber-50 text-amber-500 rounded-lg transition-colors duration-300 group-hover:bg-amber-100 group-hover:text-amber-600 group-focus-visible:bg-amber-100 group-focus-visible:text-amber-600">
             <i data-lucide="calendar-days" class="w-4 h-4"></i>
           </div>
         </div>
         <div>
-          <p id="statMonth" class="text-2xl sm:text-3xl font-extrabold text-slate-800">₹0.00</p>
-          <p class="text-[10px] text-slate-400 font-medium mt-0.5" id="statMonthLabel">Current month spend</p>
+          <span id="statMonth" class="block text-2xl sm:text-3xl font-extrabold text-slate-800">₹0.00</span>
+          <span class="stat-card-slot mt-0.5">
+            <span id="statMonthLabel" class="stat-card-caption text-[10px] text-slate-400 font-medium">Current month spend</span>
+            <span class="stat-card-hint text-[10px] text-teal-600 font-extrabold">View monthly breakdown &#10132;</span>
+          </span>
         </div>
-      </div>
+      </button>
 
-      <!-- Top Category -->
-      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+      <!-- Top Category → filter the ledger to that category -->
+      <button type="button" id="cardTopCategory" onclick="filterByTopCategory()"
+        title="Filter by category" aria-label="Top category — filter the ledger to this category"
+        class="stat-card group bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between w-full text-left">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Top Category</span>
-          <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
+          <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg transition-colors duration-300 group-hover:bg-purple-100 group-hover:text-purple-700 group-focus-visible:bg-purple-100 group-focus-visible:text-purple-700">
             <i data-lucide="pie-chart" class="w-4 h-4"></i>
           </div>
         </div>
         <div>
-          <p id="statTopCategory" class="text-base sm:text-lg font-extrabold text-slate-800 truncate">—</p>
-          <p id="statTopCategoryAmount" class="text-[10px] text-slate-400 font-medium mt-0.5">Highest spend area</p>
+          <span id="statTopCategory" class="block text-base sm:text-lg font-extrabold text-slate-800 truncate">—</span>
+          <span class="stat-card-slot mt-0.5">
+            <span id="statTopCategoryAmount" class="stat-card-caption text-[10px] text-slate-400 font-medium">Highest spend area</span>
+            <span class="stat-card-hint text-[10px] text-teal-600 font-extrabold">Filter by category &#10132;</span>
+          </span>
         </div>
-      </div>
+      </button>
     </div>
 
     <!-- Monthly Budget Goal & Progress Bar -->
@@ -296,7 +416,7 @@
     </div>
 
     <!-- Interactive Charts Section (Chart.js Visual Analytics) -->
-    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
+    <div id="analyticsSection" class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
         <div>
           <h2 class="font-bold text-slate-900 text-base sm:text-lg">Spending Analytics & Visual Insights</h2>
@@ -399,7 +519,7 @@
     </div>
 
     <!-- 4/5-Column Expense History Table -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div id="ledgerSection" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-4 border-b border-slate-100 flex items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
           <h3 class="font-bold text-slate-900 text-sm sm:text-base">Expense Log & Ledger</h3>
@@ -788,6 +908,32 @@
         <button type="button" onclick="declineGuestDataAdoption()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold cursor-pointer">Keep separate</button>
         <button type="button" onclick="acceptGuestDataAdoption()" class="w-1/2 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer">Move to my account</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Insights Modal (drill-down for the summary cards) -->
+  <div id="insightsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+    <div role="dialog" aria-modal="true" aria-labelledby="insightsTitle"
+      class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4 modal-enter max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start gap-3 border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div id="insightsIconWrap" class="p-2 bg-teal-50 text-teal-600 rounded-xl shrink-0">
+            <i data-lucide="trending-up" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="insightsTitle" class="font-bold text-slate-900 text-base sm:text-lg truncate">Summary</h3>
+            <p id="insightsSubtitle" class="text-[11px] text-slate-400 truncate">—</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeInsightsModal()" title="Close" aria-label="Close insights"
+          class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="insightsBody" class="space-y-3 text-xs"></div>
+
+      <div id="insightsActions" class="flex flex-col sm:flex-row gap-2 pt-1"></div>
     </div>
   </div>
 
@@ -1387,12 +1533,12 @@
       // Close modals with Escape / backdrop tap
       document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
-        ['addModal', 'settingsModal', 'budgetModal', 'deleteModal', 'clearAllModal', 'clearAllFinalModal', 'iosInstallModal', 'accountModal']
+        ['addModal', 'settingsModal', 'budgetModal', 'deleteModal', 'clearAllModal', 'clearAllFinalModal', 'iosInstallModal', 'accountModal', 'insightsModal']
           .forEach(id => document.getElementById(id)?.classList.add('hidden'));
         dismissCloudModal();
       });
 
-      ['settingsModal', 'budgetModal', 'addModal', 'accountModal'].forEach(id => {
+      ['settingsModal', 'budgetModal', 'addModal', 'accountModal', 'insightsModal'].forEach(id => {
         const el = document.getElementById(id);
         el?.addEventListener('click', (e) => {
           if (e.target === el) el.classList.add('hidden');
@@ -2122,6 +2268,386 @@
           ? 'px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap bg-white text-teal-700 shadow-xs font-extrabold'
           : 'px-3 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap text-slate-500 hover:text-slate-900 font-bold';
       });
+    }
+
+    /* ==========================================================================
+       INTERACTIVE DASHBOARD SUMMARY CARDS
+       All four top metric cards are clickable. Each one reads the live
+       Firestore-backed `expenses` array defensively (the array can be empty,
+       null or still mid-sync) and either drills into a summary modal or
+       re-scopes the ledger filters. A blank ledger always degrades to a
+       friendly empty-state toast instead of throwing.
+       ========================================================================== */
+
+    /** Safe view of the live (Firestore-synced) transaction array. */
+    function getSafeExpenses() {
+      if (!Array.isArray(expenses)) return [];
+      return expenses.filter((item) => item && typeof item === 'object');
+    }
+
+    /**
+     * Repair the in-memory ledger before a card hands it to the render
+     * pipeline. A Firestore snapshot can arrive partially applied, so any
+     * entry that is not a normalizable object is dropped here — the exact
+     * same rule the storage engine applies when it loads from disk or cloud.
+     * A clean array is left untouched (no re-assignment, no re-render churn).
+     * @returns {boolean} true when the ledger had to be repaired.
+     */
+    function sanitizeExpenseLedger() {
+      if (!Array.isArray(expenses)) {
+        expenses = [];
+        return true;
+      }
+      const clean = [];
+      const seenIds = new Set();
+      let repaired = false;
+      expenses.forEach((raw) => {
+        const item = normalizeItem(raw);
+        if (!item || seenIds.has(item.id)) {
+          repaired = true;
+          return;
+        }
+        seenIds.add(item.id);
+        clean.push(item);
+      });
+      if (repaired) expenses = clean;
+      return repaired;
+    }
+
+    /** Defensive amount reader — always a finite, non-negative number. */
+    function amountOf(item) {
+      const n = parseFloat(item && item.price);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+
+    /** 'YYYY-MM' prefix for the current month (or an offset from it). */
+    function monthPrefix(offset = 0) {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + offset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    /** Highest-spend category across the live ledger, or null when there is none. */
+    function getTopCategory(list = getSafeExpenses()) {
+      const totals = {};
+      list.forEach((item) => {
+        const amt = amountOf(item);
+        if (amt <= 0 || !item.category) return;
+        totals[item.category] = (totals[item.category] || 0) + amt;
+      });
+      let topCategory = null;
+      let topAmount = 0;
+      Object.keys(totals).sort().forEach((cat) => {
+        if (totals[cat] > topAmount) {
+          topAmount = totals[cat];
+          topCategory = cat;
+        }
+      });
+      return topCategory ? { category: topCategory, amount: topAmount } : null;
+    }
+
+    /** Graceful "nothing to show yet" feedback with a call to action. */
+    function showEmptyInsightToast(message) {
+      haptic([12, 40, 12]);
+      showToast(`${message} Add your first expense to unlock insights!`, 'info', 4000);
+    }
+
+    /** Smooth-scroll a dashboard section into view. */
+    function smoothScrollTo(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + (window.pageYOffset || window.scrollY || 0) - 16;
+      window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+    }
+
+    /** One-shot teal ring pulse marking the section a card jumped to. */
+    function pulseSection(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('card-pulse');
+      void el.offsetWidth; // force reflow so the animation can replay on repeat clicks
+      el.classList.add('card-pulse');
+      window.setTimeout(() => el.classList.remove('card-pulse'), 2600);
+    }
+
+    function jumpToAnalytics(message) {
+      smoothScrollTo('analyticsSection');
+      pulseSection('analyticsSection');
+      if (message) showToast(message, 'info', 2600);
+    }
+
+    function jumpToLedger(message) {
+      smoothScrollTo('ledgerSection');
+      pulseSection('ledgerSection');
+      if (message) showToast(message, 'success', 2600);
+    }
+
+    /* ---------------------------------------------------- insights modal ---- */
+    function insightsTile(label, value) {
+      return `
+        <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${escapeHTML(label)}</p>
+          <p class="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5 truncate">${value}</p>
+        </div>`;
+    }
+
+    function openInsightsModal(config) {
+      const modal = document.getElementById('insightsModal');
+      if (!modal) return;
+
+      const iconWrap = document.getElementById('insightsIconWrap');
+      if (iconWrap) {
+        iconWrap.className = `p-2 rounded-xl shrink-0 ${config.iconClasses || 'bg-teal-50 text-teal-600'}`;
+        iconWrap.innerHTML = `<i data-lucide="${config.icon || 'trending-up'}" class="w-5 h-5"></i>`;
+      }
+
+      document.getElementById('insightsTitle').innerText = config.title || 'Summary';
+      document.getElementById('insightsSubtitle').innerText = config.subtitle || '';
+      document.getElementById('insightsBody').innerHTML = config.body || '';
+
+      const primaryBtn = 'flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer flex items-center justify-center gap-1.5';
+      const ghostBtn = 'flex-1 sm:flex-none sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer';
+      document.getElementById('insightsActions').innerHTML = (config.actions || [])
+        .map((action) => {
+          const classes = action.primary ? primaryBtn : ghostBtn;
+          const icon = action.icon ? `<i data-lucide="${action.icon}" class="w-3.5 h-3.5"></i>` : '';
+          return `<button type="button" onclick="${action.onclick}" class="${classes}">${icon} ${escapeHTML(action.label)}</button>`;
+        })
+        .join('');
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+      haptic(14);
+    }
+
+    function closeInsightsModal() {
+      document.getElementById('insightsModal')?.classList.add('hidden');
+    }
+
+    /* --------------------------------------- card 1: grand total (all-time) -- */
+    function openAllTimeSummary() {
+      sanitizeExpenseLedger();
+      const list = getSafeExpenses();
+      if (!list.length) {
+        showEmptyInsightToast('No spending recorded yet.');
+        return;
+      }
+
+      const total = list.reduce((sum, item) => sum + amountOf(item), 0);
+      const count = list.length;
+      const avgPerEntry = count ? total / count : 0;
+      const dates = list.map((item) => item.date).filter(Boolean).sort();
+      const firstDate = dates[0] || '—';
+      const lastDate = dates[dates.length - 1] || '—';
+      const activeMonths = new Set(dates.map((d) => d.slice(0, 7))).size;
+      const avgPerMonth = activeMonths ? total / activeMonths : total;
+      const top = getTopCategory(list);
+      const topShare = top && total > 0 ? ((top.amount / total) * 100).toFixed(1) : '0';
+
+      const body = `
+        <div class="rounded-2xl bg-gradient-to-br from-teal-600 to-teal-800 text-white p-4">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-teal-100/90">All-time tracked spend</p>
+          <p class="text-3xl font-extrabold tracking-tight mt-0.5">${formatINR(total)}</p>
+          <p class="text-[11px] text-teal-100/90 mt-1.5">${count} logged ${count === 1 ? 'transaction' : 'transactions'} · ${escapeHTML(firstDate)} → ${escapeHTML(lastDate)}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          ${insightsTile('Entries', count)}
+          ${insightsTile('Active months', activeMonths)}
+          ${insightsTile('Avg / entry', formatINR(avgPerEntry))}
+          ${insightsTile('Avg / month', formatINR(avgPerMonth))}
+        </div>
+
+        ${top ? `
+        <button type="button" onclick="closeInsightsModal(); filterToCategory('${escapeHTML(top.category).replace(/'/g, '&#39;')}')"
+          class="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 hover:bg-teal-50/70 border border-slate-100 transition text-left cursor-pointer tap-pop">
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Top category</p>
+            <p class="text-xs font-extrabold text-slate-800 mt-0.5 truncate">${getCategoryBadge(top.category)}</p>
+          </div>
+          <div class="text-right shrink-0 pl-2">
+            <p class="text-sm font-extrabold text-slate-900">${formatINR(top.amount)}</p>
+            <p class="text-[10px] font-semibold text-slate-400">${topShare}% of all-time spend</p>
+          </div>
+        </button>` : ''}`;
+
+      openInsightsModal({
+        icon: 'wallet',
+        iconClasses: 'bg-teal-50 text-teal-600',
+        title: 'All-Time Financial Summary',
+        subtitle: `Complete overview across ${activeMonths} ${activeMonths === 1 ? 'month' : 'months'} of tracking`,
+        body,
+        actions: [
+          { label: 'View spending analytics', icon: 'bar-chart-3', primary: true, onclick: 'closeInsightsModal(); jumpToAnalytics(\'Showing the all-time category breakdown\');' },
+          { label: 'Close', onclick: 'closeInsightsModal()' }
+        ]
+      });
+    }
+
+    /* ------------------------------------- card 2: entries (transaction log) -- */
+    function openTransactionLedger() {
+      sanitizeExpenseLedger();
+      const list = getSafeExpenses();
+      if (!list.length) {
+        showEmptyInsightToast('No transactions logged yet.');
+        return;
+      }
+
+      const categorySel = document.getElementById('categoryFilter');
+      const searchEl = document.getElementById('searchInput');
+      const wasFiltered = categorySel.value !== 'All'
+        || (searchEl.value || '').trim() !== ''
+        || currentRange !== 'all';
+
+      if (wasFiltered) resetFilters(); // clears category + search + range and re-renders
+      else haptic(12);
+
+      jumpToLedger(
+        wasFiltered
+          ? `Filters cleared — all ${list.length} transactions shown`
+          : `Showing all ${list.length} logged transactions`
+      );
+    }
+
+    /* --------------------------------- card 3: this month (weekly breakdown) -- */
+    function openMonthlyBreakdown() {
+      sanitizeExpenseLedger();
+      const list = getSafeExpenses();
+      if (!list.length) {
+        showEmptyInsightToast('No spending recorded yet.');
+        return;
+      }
+
+      const prefix = monthPrefix(0);
+      const monthItems = list.filter((item) => (item.date || '').startsWith(prefix));
+
+      // Always re-scope the ledger to the current calendar month first.
+      if (currentRange !== 'this') {
+        currentRange = 'this';
+        renderExpenses();
+      }
+
+      if (!monthItems.length) {
+        const monthName = new Date().toLocaleString('en-IN', { month: 'long' });
+        showEmptyInsightToast(`Nothing logged in ${monthName} yet.`);
+        smoothScrollTo('ledgerSection');
+        return;
+      }
+
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const monthShort = now.toLocaleString('en-IN', { month: 'short' });
+      const weeks = [];
+      for (let start = 1; start <= daysInMonth; start += 7) {
+        weeks.push({ index: weeks.length + 1, start, end: Math.min(start + 6, daysInMonth), total: 0, count: 0 });
+      }
+      monthItems.forEach((item) => {
+        const day = parseInt((item.date || '').slice(8, 10), 10);
+        if (!Number.isFinite(day)) return;
+        const weekIndex = Math.min(Math.max(Math.floor((day - 1) / 7), 0), weeks.length - 1);
+        weeks[weekIndex].total += amountOf(item);
+        weeks[weekIndex].count += 1;
+      });
+
+      const monthTotal = monthItems.reduce((sum, item) => sum + amountOf(item), 0);
+      const peakTotal = weeks.reduce((max, w) => Math.max(max, w.total), 0);
+      const avgPerDay = monthTotal / daysInMonth;
+
+      const budgetRow = monthlyBudget > 0 ? `
+        <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100">
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Monthly budget</p>
+            <p class="text-xs font-bold text-slate-700 mt-0.5">${formatINR(monthTotal)} of ${formatINR(monthlyBudget)}</p>
+          </div>
+          <p class="text-xs font-extrabold ${monthTotal > monthlyBudget ? 'text-red-600' : 'text-amber-600'} shrink-0">
+            ${monthTotal > monthlyBudget ? `${formatINR(monthTotal - monthlyBudget)} over` : `${formatINR(monthlyBudget - monthTotal)} left`}
+          </p>
+        </div>` : '';
+
+      const weekRows = weeks.map((w) => {
+        const width = peakTotal > 0 ? Math.max((w.total / peakTotal) * 100, w.total > 0 ? 4 : 0) : 0;
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="text-[11px] font-bold text-slate-700">Week ${w.index}
+                <span class="text-slate-400 font-semibold">· ${w.start}–${w.end} ${monthShort}</span>
+              </span>
+              <span class="text-[11px] font-extrabold text-slate-900 shrink-0">${formatINR(w.total)}</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-200/70 overflow-hidden">
+              <div class="h-full rounded-full bg-amber-500 transition-all duration-500" style="width:${width.toFixed(1)}%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">${w.count} ${w.count === 1 ? 'transaction' : 'transactions'}</p>
+          </div>`;
+      }).join('');
+
+      const body = `
+        <div class="rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white p-4">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-amber-50/90">${now.toLocaleString('en-IN', { month: 'long', year: 'numeric' })} spend</p>
+          <p class="text-3xl font-extrabold tracking-tight mt-0.5">${formatINR(monthTotal)}</p>
+          <p class="text-[11px] text-amber-50/90 mt-1.5">${monthItems.length} ${monthItems.length === 1 ? 'transaction' : 'transactions'} · ${formatINR(avgPerDay)} / day average</p>
+        </div>
+        ${budgetRow}
+        <div class="space-y-2">${weekRows}</div>`;
+
+      openInsightsModal({
+        icon: 'calendar-range',
+        iconClasses: 'bg-amber-50 text-amber-600',
+        title: 'Monthly Breakdown',
+        subtitle: 'Week-by-week spending for the current month',
+        body,
+        actions: [
+          { label: 'See monthly trends', icon: 'bar-chart-3', primary: true, onclick: "closeInsightsModal(); setChartType('bar'); jumpToAnalytics('Switched to the monthly trends chart');" },
+          { label: 'Close', onclick: 'closeInsightsModal()' }
+        ]
+      });
+    }
+
+    /* --------------------------------- card 4: top category (ledger filter) -- */
+    function filterByTopCategory() {
+      sanitizeExpenseLedger();
+      const top = getTopCategory();
+      if (!top) {
+        showEmptyInsightToast('No categories to break down yet.');
+        return;
+      }
+
+      const categorySel = document.getElementById('categoryFilter');
+      const isFilterable = Array.from(categorySel.options).some((opt) => opt.value === top.category);
+      if (!isFilterable) {
+        showToast(`${getCategoryBadge(top.category)} is not available as a ledger filter`, 'error');
+        return;
+      }
+
+      // Clicking the card again clears the same filter — a handy toggle.
+      if (categorySel.value === top.category) {
+        categorySel.value = 'All';
+        renderExpenses();
+        haptic(12);
+        showToast(`Cleared the ${getCategoryBadge(top.category)} filter`, 'info', 2400);
+        return;
+      }
+
+      filterToCategory(top.category);
+    }
+
+    /** Apply a category filter to the ledger and jump to it. */
+    function filterToCategory(category) {
+      const categorySel = document.getElementById('categoryFilter');
+      const isFilterable = Array.from(categorySel.options).some((opt) => opt.value === category);
+      if (!isFilterable) {
+        showToast(`${getCategoryBadge(category)} is not available as a ledger filter`, 'error');
+        return;
+      }
+
+      categorySel.value = category;
+      document.getElementById('searchInput').value = '';
+      currentRange = 'all';
+      renderExpenses();
+
+      const matches = getSafeExpenses().filter((item) => item.category === category).length;
+      jumpToLedger(`Filtered to ${getCategoryBadge(category)} — ${matches} ${matches === 1 ? 'entry' : 'entries'}`);
     }
 
     /* ==========================================================================

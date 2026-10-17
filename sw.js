@@ -7,7 +7,7 @@
    - Same-origin assets: cache-first
    - CDN assets: stale-while-revalidate (instant load, silent refresh online)
    ========================================================================== */
-const CACHE_NAME = 'expense-tracker-pro-v9';
+const CACHE_NAME = 'expense-tracker-pro-v10';
 
 const STATIC_ASSETS = [
   './',
